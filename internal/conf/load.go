@@ -41,10 +41,10 @@ type DeletionFile struct {
 	WaitTimeout      string `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
-// ObservabilityFile holds audit/metrics stubs config.
+// ObservabilityFile holds logging verbosity. Audit retention sinks
+// (ConfigMap / object storage) are deferred — stdout JSON only for now.
 type ObservabilityFile struct {
-	AuditConfigMapNamespace string `json:"auditConfigMapNamespace" yaml:"auditConfigMapNamespace"`
-	Verbosity               string `json:"verbosity" yaml:"verbosity"`
+	Verbosity string `json:"verbosity" yaml:"verbosity"`
 }
 
 // Resolved is the runtime policy after defaults and parsing.

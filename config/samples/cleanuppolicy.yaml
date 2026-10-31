@@ -1,5 +1,8 @@
-# MVP CleanupPolicy (file / ConfigMap substitute for the future CRD).
+# Sample CleanupPolicy document (file form for --config override).
+# In-cluster primary surface is labelled ConfigMaps in the dedicated xp-clean
+# namespace — see configmap.yaml / configmap-team-b.yaml for multi-tenancy.
 # British English docs; XR-only / v2-native — no claim support.
+# Audit retention sinks are deferred (stdout JSON only).
 name: test-stacks
 schedule: "0 */6 * * *"
 dryRun: true
@@ -13,6 +16,7 @@ selectors:
     namespaces: ["team-*-dev", "xp-test-*"]
     xrdNames: ["*.dev.example.org"]
     xrNames: ["test-*", "ephemeral-*"]
+    # First-cut GVK globs are group/version (kind not required).
     gvks: ["*.dev.example.org/*"]
   namespaceDeny: ["kube-system", "crossplane-system"]
 ttl:
@@ -24,9 +28,8 @@ deletion:
   maxTracesPerRun: 20
   maxDeletesPerRun: 100
   orphanMode: report
-  deletePaused: false
+  deletePaused: false # skip paused resources by default
   allowXRDDeletion: false
   waitTimeout: 30m
 observability:
-  auditConfigMapNamespace: xp-clean
   verbosity: normal

@@ -31,7 +31,7 @@ func (g *Global) BindRootFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&g.Kube.Context, "context", "", "kubeconfig context name to use")
 	fs.StringVar(&g.Kube.Cluster, "cluster", "", "kubeconfig cluster name override")
 	fs.StringVar(&g.Kube.User, "user", "", "kubeconfig user (auth info) override")
-	fs.StringVarP(&g.Kube.Namespace, "namespace", "n", "", "namespace for namespaced lookups (trace only in early phases; rejected on run/plan)")
+	fs.StringVarP(&g.Kube.Namespace, "namespace", "n", "", "namespace for namespaced lookups on trace only (rejected on run/plan)")
 	fs.DurationVar(&g.Kube.Timeout, "request-timeout", 0, "timeout for an individual Kubernetes API request (0 = client default)")
 
 	fs.BoolVar(&g.Log.Devel, "zap-devel", true, "development logging (console encoder, stacktraces on warn+)")

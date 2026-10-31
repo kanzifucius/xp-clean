@@ -1,6 +1,7 @@
 package options
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -16,33 +17,48 @@ import (
 
 // PolicyFlags are product flags shared by run/plan/manager.
 type PolicyFlags struct {
-	ConfigPath string
-	DryRun     bool
-	Scope      string
+	ConfigPath      string
+	PolicyNamespace string
+	DryRun          bool
+	Scope           string
+	FailOnBlocked   bool
 }
 
-// Bind registers --config / --dry-run / --scope on a command flag set.
+// Bind registers --config / --dry-run / --scope / ConfigMap flags on a command.
 func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
-	fs.StringVar(&p.ConfigPath, "config", "", "path to CleanupPolicy YAML (default: XP_CLEAN_CONFIG or config/samples/cleanuppolicy.yaml)")
+	fs.StringVar(&p.ConfigPath, "config", "", "path to policy YAML file override (explicit; no implicit sample path). When unset, load labelled ConfigMaps from --policy-namespace")
+	fs.StringVar(&p.PolicyNamespace, "policy-namespace", "", "namespace for labelled policy ConfigMaps (default: xp-clean or XP_CLEAN_POLICY_NAMESPACE)")
 	if withDryRun {
 		// Default false is irrelevant; use Changed("dry-run") to detect overrides.
 		fs.BoolVar(&p.DryRun, "dry-run", false, "planner dry-run only (no deletes); when unset, use policy dryRun (default true). Not kubectl API-server dry-run")
 	}
 	fs.StringVar(&p.Scope, "scope", "", "deletion.scope override: instances-only|all (default from policy, then instances-only)")
+	fs.BoolVar(&p.FailOnBlocked, "fail-on-blocked", false, "exit 3 when the run completed with blocked plans")
 }
 
-// Load merges file + env + flags into a resolved policy.
-func (p *PolicyFlags) Load(fs *pflag.FlagSet, forceDryRun bool) (conf.Resolved, error) {
+// Overrides builds FlagOverrides from flags (including dry-run Changed state).
+func (p *PolicyFlags) Overrides(fs *pflag.FlagSet, forceDryRun bool) policy.FlagOverrides {
 	o := policy.FlagOverrides{
-		ConfigPath:  p.ConfigPath,
-		Scope:       p.Scope,
-		ForceDryRun: forceDryRun,
+		ConfigPath:      p.ConfigPath,
+		PolicyNamespace: p.PolicyNamespace,
+		Scope:           p.Scope,
+		ForceDryRun:     forceDryRun,
 	}
 	if fs != nil && fs.Lookup("dry-run") != nil && fs.Changed("dry-run") {
 		o.DryRunSet = true
 		o.DryRun = p.DryRun
 	}
-	return policy.LoadAndMerge(o)
+	return o
+}
+
+// Load merges file + env + flags into a resolved policy (file override only).
+func (p *PolicyFlags) Load(fs *pflag.FlagSet, forceDryRun bool) (conf.Resolved, error) {
+	return policy.LoadAndMerge(p.Overrides(fs, forceDryRun))
+}
+
+// LoadAll resolves file override or in-cluster ConfigMaps (multi-tenant).
+func (p *PolicyFlags) LoadAll(ctx context.Context, fs *pflag.FlagSet, restCfg *rest.Config, forceDryRun bool) ([]conf.Resolved, error) {
+	return policy.LoadPolicies(ctx, p.Overrides(fs, forceDryRun), restCfg)
 }
 
 // LiveBackend constructs a discover.LiveBackend from a REST config.
@@ -51,12 +67,12 @@ func LiveBackend(cfg *rest.Config) (*discover.LiveBackend, error) {
 }
 
 // PrintSummary writes a human summary of a run to stderr.
-func PrintSummary(w io.Writer, result cleanup.RunResult, policy conf.Resolved) {
+func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 	if w == nil {
 		w = os.Stderr
 	}
 	fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
-		policy.Name, policy.DryRun, policy.Deletion.Scope, len(result.Traces), len(result.Plans))
+		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
 	for _, tr := range result.Traces {
 		fmt.Fprint(w, trace.RenderText(tr))
 	}
@@ -72,11 +88,11 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, policy conf.Resolved) {
 	}
 }
 
-// RejectNamespaceOnRunPlan enforces open question Q7 option (c) for early phases:
-// --namespace / -n is only meaningful on trace.
+// RejectNamespaceOnRunPlan enforces the locked rule that -n / --namespace is
+// valid only on trace. Eligibility never comes from a CLI namespace flag.
 func RejectNamespaceOnRunPlan(ns string) error {
 	if ns == "" {
 		return nil
 	}
-	return fmt.Errorf("--namespace / -n is not supported on run/plan yet (use policy namespace globs; -n is allowed on trace)")
+	return fmt.Errorf("--namespace / -n is not valid on run/plan; eligibility comes from policy labels/globs only (-n is allowed on trace)")
 }

@@ -3,34 +3,40 @@ package controller
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/kanzifucius/xp-clean/internal/conf"
 )
 
-// RunnerFunc is invoked on each schedule tick.
+// RunnerFunc is invoked on each schedule tick for one policy.
 type RunnerFunc func(ctx context.Context, policy conf.Resolved) error
 
 // Scheduler is a minimal wall-clock ticker for MVP (not a full cron parser).
 // Production should use robfig/cron or controller-runtime requeue; this stub
 // runs at a fixed interval derived from a simple parse of common schedules,
-// or falls back to every 6 hours.
+// or falls back to every 6 hours. Multiple policies (ConfigMap multi-tenancy)
+// are executed sequentially on each tick.
 type Scheduler struct {
 	Interval time.Duration
-	Policy   conf.Resolved
+	Policies []conf.Resolved
 	Run      RunnerFunc
-	Log      *slog.Logger
+	Log      logr.Logger
 }
 
-// NewScheduler builds a scheduler from policy.Schedule (best-effort).
-func NewScheduler(policy conf.Resolved, run RunnerFunc, log *slog.Logger) *Scheduler {
-	if log == nil {
-		log = slog.Default()
+// NewScheduler builds a scheduler from the first policy's schedule (best-effort)
+// and runs every loaded policy on each tick.
+func NewScheduler(policies []conf.Resolved, run RunnerFunc, log logr.Logger) *Scheduler {
+	if log.GetSink() == nil {
+		log = logr.Discard()
+	}
+	schedule := "0 */6 * * *"
+	if len(policies) > 0 && policies[0].Schedule != "" {
+		schedule = policies[0].Schedule
 	}
 	return &Scheduler{
-		Interval: intervalFromCron(policy.Schedule),
-		Policy:   policy,
+		Interval: intervalFromCron(schedule),
+		Policies: policies,
 		Run:      run,
 		Log:      log,
 	}
@@ -50,15 +56,21 @@ func intervalFromCron(expr string) time.Duration {
 	}
 }
 
+func (s *Scheduler) runAll(ctx context.Context) {
+	for _, p := range s.Policies {
+		if err := s.Run(ctx, p); err != nil {
+			s.Log.Error(err, "scheduled run failed", "policy", p.Name)
+		}
+	}
+}
+
 // Start blocks until ctx is cancelled, invoking Run on each tick (including immediately).
 func (s *Scheduler) Start(ctx context.Context) error {
 	if s.Run == nil {
 		return fmt.Errorf("scheduler: Run is nil")
 	}
-	s.Log.Info("scheduler starting", "interval", s.Interval.String(), "policy", s.Policy.Name)
-	if err := s.Run(ctx, s.Policy); err != nil {
-		s.Log.Error("scheduled run failed", "err", err)
-	}
+	s.Log.Info("scheduler starting", "interval", s.Interval.String(), "policies", len(s.Policies))
+	s.runAll(ctx)
 	t := time.NewTicker(s.Interval)
 	defer t.Stop()
 	for {
@@ -67,9 +79,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 			s.Log.Info("scheduler stopped")
 			return ctx.Err()
 		case <-t.C:
-			if err := s.Run(ctx, s.Policy); err != nil {
-				s.Log.Error("scheduled run failed", "err", err)
-			}
+			s.runAll(ctx)
 		}
 	}
 }

@@ -1,0 +1,37 @@
+# Second per-team policy ConfigMap (multi-tenancy example).
+# Same xp-clean namespace; different selectors / TTL from team-a.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xp-clean-policy-team-b
+  namespace: xp-clean
+  labels:
+    xp-clean.io/policy: "true"
+    xp-clean.io/team: team-b
+data:
+  policy.yaml: |
+    name: team-b
+    schedule: "0 */6 * * *"
+    dryRun: true
+    timezone: Europe/London
+    selectors:
+      globs:
+        namespaces: ["team-b-*"]
+        xrdNames: ["*.team-b.example.org"]
+        xrNames: ["ephemeral-*"]
+        gvks: ["*.team-b.example.org/v1*"]
+      namespaceDeny: ["kube-system", "crossplane-system"]
+    ttl:
+      respectResourceTTL: true
+      defaultTTL: 72h
+      applyDefaultTTLIfMissing: false
+    deletion:
+      scope: instances-only
+      maxTracesPerRun: 10
+      maxDeletesPerRun: 50
+      orphanMode: report
+      deletePaused: false
+      allowXRDDeletion: false
+      waitTimeout: 30m
+    observability:
+      verbosity: normal
