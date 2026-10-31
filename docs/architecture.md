@@ -18,6 +18,18 @@ Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery 
 
 CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.
 
+## Diagrams
+
+Standalone Archify HTML (open in a browser):
+
+| Diagram | File |
+|---------|------|
+| Runtime architecture | [diagrams/xp-clean-runtime.html](diagrams/xp-clean-runtime.html) |
+| Cleanup run-once workflow | [diagrams/cleanup-run-once.html](diagrams/cleanup-run-once.html) |
+| `run --once` + Teams sequence | [diagrams/run-once-teams.html](diagrams/run-once-teams.html) |
+
+See [diagrams/README.md](diagrams/README.md) for what each diagram covers.
+
 ## Design plans
 
 Longer design notes are maintained alongside the Cursor project for this repository (architecture, release plumbing, notification hooks). Product behaviour summarised in these docs should match those locked decisions; when in doubt, prefer the samples under `config/samples/` and the CLI help text in the current release.
