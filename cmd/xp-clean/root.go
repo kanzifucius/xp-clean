@@ -23,9 +23,13 @@ schedule.
 
 Claims / LegacyCluster claim paths are not supported.
 
---dry-run is planner dry-run (client-side DeletePlan only), not kubectl
-API-server dry-run. --scope=all means definitions+instances; the plan
-subcommand plans all eligible traces (not the same as scope=all).`,
+In-cluster policy comes from labelled ConfigMaps in the xp-clean namespace
+(multi-tenant / per-team). Pass --config for an explicit file override.
+
+--dry-run is a boolean planner dry-run (client-side DeletePlan only), not
+kubectl API-server dry-run. --scope=all means definitions+instances; the
+plan subcommand plans all eligible traces (not the same as scope=all).
+--namespace / -n is valid only on trace.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {

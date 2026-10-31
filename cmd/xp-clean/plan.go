@@ -23,21 +23,18 @@ func newPlanCommand(g *options.Global) *cobra.Command {
 		Use:   "plan",
 		Short: "Print DeletePlans for all eligible traces (always dry-run)",
 		Long: `Plan builds DeletePlans for every eligible trace and prints them on stdout.
-Always forces planner dry-run (no deletes). --scope selects deletion.scope for the plan
-contents; it does not mean "plan only definitions".`,
+Always forces planner dry-run (no deletes). Loads labelled ConfigMaps from
+--policy-namespace unless --config is set. --scope selects deletion.scope for
+the plan contents; it does not mean "plan only definitions".
+--fail-on-blocked exits 3 when any plan is blocked.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)
 			}
 
-			policy, err := pf.Load(cmd.Flags(), true)
+			policies, cfg, err := loadPoliciesAndREST(cmd, g, &pf, true)
 			if err != nil {
-				return classifyConfigErr(err)
-			}
-
-			cfg, err := g.RESTConfig()
-			if err != nil {
-				return exit.RuntimeErr(err)
+				return err
 			}
 			backend, err := options.LiveBackend(cfg)
 			if err != nil {
@@ -49,27 +46,40 @@ contents; it does not mean "plan only definitions".`,
 				Audit:   audit.NewLogger(os.Stderr),
 				Out:     os.Stderr,
 			}
-			g.Logger.Info("plan", "policy", policy.Name, "scope", policy.Deletion.Scope)
-			result, err := runner.RunOnce(cmd.Context(), clipolicy.ToPolicyView(policy))
-			if err != nil {
-				return exit.RuntimeErr(fmt.Errorf("plan failed: %w", err))
+
+			var allPlans []cleanup.DeletePlan
+			for _, policy := range policies {
+				g.Logger.Info("plan", "policy", policy.Name, "scope", policy.Deletion.Scope)
+				result, err := runner.RunOnce(cmd.Context(), clipolicy.ToPolicyView(policy))
+				if err != nil {
+					return exit.RuntimeErr(fmt.Errorf("plan failed (%s): %w", policy.Name, err))
+				}
+				allPlans = append(allPlans, result.Plans...)
 			}
 
 			switch output {
 			case "", "json":
 				enc := json.NewEncoder(cmd.OutOrStdout())
 				enc.SetIndent("", "  ")
-				return enc.Encode(result.Plans)
+				if err := enc.Encode(allPlans); err != nil {
+					return exit.RuntimeErr(err)
+				}
 			case "yaml":
-				b, err := yaml.Marshal(result.Plans)
+				b, err := yaml.Marshal(allPlans)
 				if err != nil {
 					return exit.RuntimeErr(err)
 				}
-				_, err = cmd.OutOrStdout().Write(b)
-				return err
+				if _, err = cmd.OutOrStdout().Write(b); err != nil {
+					return exit.RuntimeErr(err)
+				}
 			default:
 				return exit.UsageErr(fmt.Errorf("unknown --output %q (want json|yaml)", output))
 			}
+
+			if pf.FailOnBlocked && cleanup.HasBlockedPlans(allPlans) {
+				return exit.BlockedErr(fmt.Errorf("completed with blocked plans (--fail-on-blocked)"))
+			}
+			return nil
 		},
 	}
 	pf.Bind(cmd.Flags(), false)

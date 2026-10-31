@@ -30,6 +30,27 @@ type RunResult struct {
 	Results []ExecuteResult
 }
 
+// HasBlockedPlans reports whether any plan was blocked by safety gates or budgets.
+func HasBlockedPlans(plans []DeletePlan) bool {
+	for _, p := range plans {
+		if len(p.BlockedBy) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// MergeRunResults concatenates results from multiple policy passes.
+func MergeRunResults(parts ...RunResult) RunResult {
+	var out RunResult
+	for _, p := range parts {
+		out.Traces = append(out.Traces, p.Traces...)
+		out.Plans = append(out.Plans, p.Plans...)
+		out.Results = append(out.Results, p.Results...)
+	}
+	return out
+}
+
 // ClusterBackend abstracts discovery + delete for live or fake clusters.
 type ClusterBackend interface {
 	DiscoverRoots(ctx context.Context, sel match.Selectors, ttl match.TTLConfig, now time.Time) ([]discover.RootCandidate, error)

@@ -24,8 +24,10 @@ func MatchAny(value string, patterns []string) (bool, error) {
 	return false, nil
 }
 
-// MatchGVK matches a "group/version" or "group/version/kind" string against
-// patterns. Patterns may use filepath.Match wildcards; '*' does not cross '/'.
+// MatchGVK matches a resource against GVK glob patterns.
+// First-cut patterns are group/version (kind not required), e.g.
+// "apps.example.org/v1" or "*.dev.example.org/*". Kind-bearing patterns
+// remain accepted if operators supply them. '*' does not cross '/'.
 func MatchGVK(group, version, kind string, patterns []string) (bool, error) {
 	if len(patterns) == 0 {
 		return true, nil

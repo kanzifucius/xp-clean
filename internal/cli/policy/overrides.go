@@ -1,19 +1,27 @@
 package policy
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/kanzifucius/xp-clean/internal/conf"
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
-// FlagOverrides are Cobra/env product overrides applied after loading the policy file.
+// FlagOverrides are Cobra/env product overrides applied after loading policy.
 // Precedence: flags > env > policy document > defaults (architecture §8).
 type FlagOverrides struct {
-	// ConfigPath is the --config value (may be empty before env merge).
+	// ConfigPath is the --config value (file override). Empty means use
+	// in-cluster ConfigMaps (or XP_CLEAN_CONFIG when set).
 	ConfigPath string
+
+	// PolicyNamespace is the namespace for labelled policy ConfigMaps.
+	// Empty defaults to conf.DefaultPolicyNamespace ("xp-clean").
+	PolicyNamespace string
 
 	// DryRunSet is true when --dry-run was explicitly passed on the argv.
 	DryRunSet bool
@@ -26,15 +34,26 @@ type FlagOverrides struct {
 	ForceDryRun bool
 }
 
-// ResolveConfigPath picks --config, then XP_CLEAN_CONFIG, then defaultPath.
-func ResolveConfigPath(flagPath, defaultPath string) string {
+// ResolveConfigPath picks --config, then XP_CLEAN_CONFIG. Empty means no file
+// override — callers should load in-cluster ConfigMaps instead.
+// There is no implicit repo-relative sample path.
+func ResolveConfigPath(flagPath string) string {
 	if flagPath != "" {
 		return flagPath
 	}
-	if v := strings.TrimSpace(os.Getenv("XP_CLEAN_CONFIG")); v != "" {
+	return strings.TrimSpace(os.Getenv("XP_CLEAN_CONFIG"))
+}
+
+// ResolvePolicyNamespace picks --policy-namespace, then XP_CLEAN_POLICY_NAMESPACE,
+// then the dedicated xp-clean default.
+func ResolvePolicyNamespace(flagNS string) string {
+	if flagNS != "" {
+		return flagNS
+	}
+	if v := strings.TrimSpace(os.Getenv("XP_CLEAN_POLICY_NAMESPACE")); v != "" {
 		return v
 	}
-	return defaultPath
+	return conf.DefaultPolicyNamespace
 }
 
 // ApplyEnv overlays XP_CLEAN_DRY_RUN / XP_CLEAN_SCOPE when the corresponding
@@ -58,12 +77,17 @@ func ApplyEnv(o *FlagOverrides) error {
 	return nil
 }
 
-// LoadAndMerge loads the policy file and applies env + flag overrides.
+// LoadAndMerge loads a single policy from an explicit file path (--config /
+// XP_CLEAN_CONFIG) and applies env + flag overrides.
+// Callers that want in-cluster ConfigMaps should use LoadPolicies.
 func LoadAndMerge(o FlagOverrides) (conf.Resolved, error) {
 	if err := ApplyEnv(&o); err != nil {
 		return conf.Resolved{}, err
 	}
-	path := ResolveConfigPath(o.ConfigPath, "config/samples/cleanuppolicy.yaml")
+	path := ResolveConfigPath(o.ConfigPath)
+	if path == "" {
+		return conf.Resolved{}, fmt.Errorf("policy source required: pass --config PATH (or set XP_CLEAN_CONFIG), or omit both to load labelled ConfigMaps from the xp-clean namespace")
+	}
 	policy, err := conf.LoadFile(path)
 	if err != nil {
 		return conf.Resolved{}, err
@@ -75,6 +99,51 @@ func LoadAndMerge(o FlagOverrides) (conf.Resolved, error) {
 		policy.DryRun = true
 	}
 	return policy, nil
+}
+
+// LoadPolicies resolves the policy source:
+//   - explicit --config / XP_CLEAN_CONFIG → one file policy
+//   - otherwise → all labelled ConfigMaps in the policy namespace (multi-tenant)
+func LoadPolicies(ctx context.Context, o FlagOverrides, restCfg *rest.Config) ([]conf.Resolved, error) {
+	if err := ApplyEnv(&o); err != nil {
+		return nil, err
+	}
+	path := ResolveConfigPath(o.ConfigPath)
+	if path != "" {
+		p, err := conf.LoadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		if err := applyFlagOverrides(&p, o); err != nil {
+			return nil, err
+		}
+		if o.ForceDryRun {
+			p.DryRun = true
+		}
+		return []conf.Resolved{p}, nil
+	}
+
+	if restCfg == nil {
+		return nil, fmt.Errorf("policy source required: pass --config PATH (or set XP_CLEAN_CONFIG), or provide cluster access to load ConfigMaps")
+	}
+	client, err := kubernetes.NewForConfig(restCfg)
+	if err != nil {
+		return nil, fmt.Errorf("kubernetes client for ConfigMaps: %w", err)
+	}
+	ns := ResolvePolicyNamespace(o.PolicyNamespace)
+	policies, err := conf.LoadFromConfigMaps(ctx, conf.NewClientsetLister(client), ns)
+	if err != nil {
+		return nil, err
+	}
+	for i := range policies {
+		if err := applyFlagOverrides(&policies[i], o); err != nil {
+			return nil, err
+		}
+		if o.ForceDryRun {
+			policies[i].DryRun = true
+		}
+	}
+	return policies, nil
 }
 
 func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
