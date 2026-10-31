@@ -16,29 +16,51 @@ theme:
   name: material
   language: en
   palette:
-    - scheme: default
-      primary: teal
-      accent: teal
+    # Follow OS preference first, then explicit light / slate.
+    - media: "(prefers-color-scheme)"
       toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: teal
-      accent: teal
-      toggle:
-        icon: material/brightness-4
+        icon: material/brightness-auto
         name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to system preference
+  font:
+    # Expressive but calm — avoid Inter / Roboto / system defaults.
+    text: Sora
+    code: IBM Plex Mono
   features:
     - navigation.instant
+    - navigation.instant.progress
     - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
+    - navigation.indexes
     - navigation.top
+    - toc.follow
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
     - search.suggest
     - search.highlight
     - search.share
   icon:
     repo: fontawesome/brands/github
+    logo: material/broom
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   # Re-declared because other plugins are listed; Material search is client-side (lunr).
@@ -79,12 +101,20 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
+  - Install:
+    - Overview: install.md
+    - Quickstart: quickstart.md
+  - Concepts:
+    - concepts/index.md
+    - Policy and eligibility: concepts/policy.md
+  - Architecture:
+    - architecture/index.md
+    - Runtime diagram: architecture/runtime.md
+    - Cleanup workflow: architecture/workflow.md
+    - Teams sequence: architecture/sequence.md
   - CLI: cli.md
-  - ConfigMap policy: configmap-policy.md
-  - Eligibility and cleanup: eligibility-cleanup.md
-  - Notifications (Teams): notifications.md
-  - Install and releases: install.md
-  - Architecture: architecture.md
-  - Diagrams: diagrams/README.md
+  - Operations:
+    - operations/index.md
+    - Cleanup: operations/cleanup.md
+    - Notifications: operations/notifications.md
   - Contributing: contributing.md

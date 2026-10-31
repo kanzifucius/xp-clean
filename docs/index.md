@@ -17,18 +17,55 @@ It targets **v2-native** stacks only (**Namespaced** and modern **Cluster** XRs)
 4. **Execute** safely — dry-run by default, budgets, skip paused resources, never strip Crossplane finalizers.
 5. **Notify** (optional) via Microsoft Teams Workflows on run start / finish / failure.
 
-## Documentation map
+## Where to start
 
-| Page | Contents |
-|------|----------|
-| [Quickstart](quickstart.md) | Local dry-run and first ConfigMap |
-| [CLI](cli.md) | Commands, flags, exit codes |
-| [ConfigMap policy](configmap-policy.md) | In-cluster multi-tenant policy |
-| [Eligibility and cleanup](eligibility-cleanup.md) | Matching, scope, safety gates |
-| [Notifications](notifications.md) | Teams Workflows hooks |
-| [Install and releases](install.md) | Archives, private GHCR, SemVer tags |
-| [Architecture](architecture.md) | MVP scope vs deferred work |
-| [Contributing](contributing.md) | Repo link and how to help |
+<div class="doc-map" markdown="1">
+
+<div markdown="1">
+
+**[Install](install.md)**  
+Curl installer, pinned versions, GHCR, and release notes.
+
+</div>
+
+<div markdown="1">
+
+**[Quickstart](quickstart.md)**  
+Local dry-run against a sample policy in a few commands.
+
+</div>
+
+<div markdown="1">
+
+**[Concepts](concepts/index.md)**  
+ConfigMap policy shape and how eligibility matching works.
+
+</div>
+
+<div markdown="1">
+
+**[Architecture](architecture/index.md)**  
+MVP scope plus embedded Archify diagrams of runtime, workflow, and Teams sequence.
+
+</div>
+
+<div markdown="1">
+
+**[CLI](cli.md)**  
+Commands, flags, exit codes, and precedence.
+
+</div>
+
+<div markdown="1">
+
+**[Operations](operations/index.md)**  
+Cleanup safety gates and Teams notification hooks.
+
+</div>
+
+</div>
+
+Contributing and local docs builds are covered in [Contributing](contributing.md).
 
 ## Site features
 

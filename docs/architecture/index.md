@@ -20,15 +20,15 @@ CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart
 
 ## Diagrams
 
-Standalone Archify HTML (open in a browser):
+Interactive **Archify** HTML (showcase quality) is embedded below each caption page. Open the standalone file if you prefer a full browser tab.
 
-| Diagram | File |
-|---------|------|
-| Runtime architecture | [diagrams/xp-clean-runtime.html](diagrams/xp-clean-runtime.html) |
-| Cleanup run-once workflow | [diagrams/cleanup-run-once.html](diagrams/cleanup-run-once.html) |
-| `run --once` + Teams sequence | [diagrams/run-once-teams.html](diagrams/run-once-teams.html) |
+| Diagram | Page | Standalone HTML |
+|---------|------|-----------------|
+| Runtime architecture | [Runtime diagram](runtime.md) | [xp-clean-runtime.html](xp-clean-runtime.html) |
+| Cleanup run-once workflow | [Cleanup workflow](workflow.md) | [cleanup-run-once.html](cleanup-run-once.html) |
+| `run --once` + Teams sequence | [Teams sequence](sequence.md) | [run-once-teams.html](run-once-teams.html) |
 
-See [diagrams/README.md](diagrams/README.md) for what each diagram covers.
+Regenerated from repository-backed Archify candidates under `.archify/` (not committed). Pin evidence with `--repo-root` and `--quality showcase`.
 
 ## Design plans
 
