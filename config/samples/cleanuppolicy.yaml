@@ -1,0 +1,32 @@
+# MVP CleanupPolicy (file / ConfigMap substitute for the future CRD).
+# British English docs; XR-only / v2-native — no claim support.
+name: test-stacks
+schedule: "0 */6 * * *"
+dryRun: true
+timezone: Europe/London
+selectors:
+  # Labels and/or globs — either side may be empty.
+  # Object must satisfy all non-empty constraint groups (AND).
+  requireLabels:
+    xp-clean.io/eligible: "true"
+  globs:
+    namespaces: ["team-*-dev", "xp-test-*"]
+    xrdNames: ["*.dev.example.org"]
+    xrNames: ["test-*", "ephemeral-*"]
+    gvks: ["*.dev.example.org/*"]
+  namespaceDeny: ["kube-system", "crossplane-system"]
+ttl:
+  respectResourceTTL: true
+  defaultTTL: 168h
+  applyDefaultTTLIfMissing: false
+deletion:
+  scope: instances-only # instances-only (default) | all
+  maxTracesPerRun: 20
+  maxDeletesPerRun: 100
+  orphanMode: report
+  deletePaused: false
+  allowXRDDeletion: false
+  waitTimeout: 30m
+observability:
+  auditConfigMapNamespace: xp-clean
+  verbosity: normal

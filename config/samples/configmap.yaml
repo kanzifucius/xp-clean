@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xp-clean-policy
+  namespace: xp-clean
+data:
+  policy.yaml: |
+    name: test-stacks
+    schedule: "0 */6 * * *"
+    dryRun: true
+    timezone: Europe/London
+    selectors:
+      requireLabels:
+        xp-clean.io/eligible: "true"
+      globs:
+        namespaces: ["xp-test-*"]
+        xrdNames: ["*.dev.example.org"]
+        xrNames: ["test-*"]
+      namespaceDeny: ["kube-system", "crossplane-system"]
+    ttl:
+      respectResourceTTL: true
+      defaultTTL: 168h
+      applyDefaultTTLIfMissing: false
+    deletion:
+      scope: instances-only
+      maxTracesPerRun: 20
+      maxDeletesPerRun: 100
+      orphanMode: report
+      deletePaused: false
+      allowXRDDeletion: false
+      waitTimeout: 30m

@@ -1,0 +1,20 @@
+# Sample unstructured shapes used as documentation for fixtures.
+# Unit tests build equivalent objects in Go without a live cluster.
+apiVersion: db.dev.example.org/v1alpha1
+kind: XDB
+metadata:
+  name: test-db
+  namespace: xp-test-1
+  labels:
+    xp-clean.io/eligible: "true"
+  annotations:
+    xp-clean.io/ttl: "48h"
+spec:
+  crossplane:
+    compositionRef:
+      name: xdb-comp
+    resourceRefs:
+      - apiVersion: v1
+        kind: ConfigMap
+        name: test-db-cm
+        namespace: xp-test-1
