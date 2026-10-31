@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
@@ -41,10 +42,39 @@ type DeletionFile struct {
 	WaitTimeout      string `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
-// ObservabilityFile holds audit/metrics stubs config.
+// ObservabilityFile holds audit/metrics stubs and notification config.
 type ObservabilityFile struct {
-	AuditConfigMapNamespace string `json:"auditConfigMapNamespace" yaml:"auditConfigMapNamespace"`
-	Verbosity               string `json:"verbosity" yaml:"verbosity"`
+	AuditConfigMapNamespace string            `json:"auditConfigMapNamespace" yaml:"auditConfigMapNamespace"`
+	Verbosity               string            `json:"verbosity" yaml:"verbosity"`
+	Notifications           NotificationsFile `json:"notifications" yaml:"notifications"`
+}
+
+// NotificationsFile is the non-secret chat notification block under observability.
+// Webhook URLs are never inlined — sinks name an env var via webhookURLFromEnv.
+type NotificationsFile struct {
+	Enabled                  *bool      `json:"enabled" yaml:"enabled"`
+	NotifyOn                 []string   `json:"notifyOn" yaml:"notifyOn"`
+	OnDryRun                 *bool      `json:"onDryRun" yaml:"onDryRun"`
+	OnSuccessWithZeroDeletes *bool      `json:"onSuccessWithZeroDeletes" yaml:"onSuccessWithZeroDeletes"`
+	OnPartialErrors          *bool      `json:"onPartialErrors" yaml:"onPartialErrors"`
+	Sinks                    []SinkFile `json:"sinks" yaml:"sinks"`
+}
+
+// SinkFile is one chat sink entry (multi-sink schema from day one).
+type SinkFile struct {
+	Type              string `json:"type" yaml:"type"` // teams | slack
+	WebhookURLFromEnv string `json:"webhookURLFromEnv" yaml:"webhookURLFromEnv"`
+	LogURLTemplate    string `json:"logURLTemplate" yaml:"logURLTemplate"`
+}
+
+// NotificationsResolved is runtime notification settings after defaults.
+type NotificationsResolved struct {
+	Enabled                  bool
+	NotifyOn                 []string
+	OnDryRun                 bool
+	OnSuccessWithZeroDeletes bool
+	OnPartialErrors          bool
+	Sinks                    []SinkFile
 }
 
 // Resolved is the runtime policy after defaults and parsing.
@@ -57,6 +87,7 @@ type Resolved struct {
 	TTL           match.TTLConfig
 	Deletion      cleanup.DeletionConfig
 	Observability ObservabilityFile
+	Notifications NotificationsResolved
 }
 
 // LoadFile reads a policy YAML file.
@@ -142,10 +173,72 @@ func Resolve(p Policy) (Resolved, error) {
 	}
 	r.Deletion = del
 
+	notif, err := resolveNotifications(p.Observability.Notifications)
+	if err != nil {
+		return Resolved{}, err
+	}
+	r.Notifications = notif
+
 	if len(r.Selectors.RequireLabels) == 0 && !hasGlobs(r.Selectors) {
 		return Resolved{}, fmt.Errorf("selectors must include requireLabels and/or globs")
 	}
 	return r, nil
+}
+
+func resolveNotifications(n NotificationsFile) (NotificationsResolved, error) {
+	out := NotificationsResolved{
+		Enabled:                  false,
+		NotifyOn:                 []string{"started", "finished", "failed"},
+		OnDryRun:                 true,
+		OnSuccessWithZeroDeletes: false,
+		OnPartialErrors:          true,
+		Sinks:                    nil,
+	}
+	if n.Enabled != nil {
+		out.Enabled = *n.Enabled
+	}
+	if n.NotifyOn != nil {
+		out.NotifyOn = append([]string(nil), n.NotifyOn...)
+	}
+	if n.OnDryRun != nil {
+		out.OnDryRun = *n.OnDryRun
+	}
+	if n.OnSuccessWithZeroDeletes != nil {
+		out.OnSuccessWithZeroDeletes = *n.OnSuccessWithZeroDeletes
+	}
+	if n.OnPartialErrors != nil {
+		out.OnPartialErrors = *n.OnPartialErrors
+	}
+	for _, kind := range out.NotifyOn {
+		switch strings.ToLower(strings.TrimSpace(kind)) {
+		case "started", "finished", "failed":
+		default:
+			return NotificationsResolved{}, fmt.Errorf("observability.notifications.notifyOn: unknown event %q (want started|finished|failed)", kind)
+		}
+	}
+	for i, s := range n.Sinks {
+		typ := strings.ToLower(strings.TrimSpace(s.Type))
+		switch typ {
+		case "teams", "slack":
+			// ok — teams implemented; slack accepted for schema readiness
+		case "":
+			return NotificationsResolved{}, fmt.Errorf("observability.notifications.sinks[%d]: type is required", i)
+		default:
+			return NotificationsResolved{}, fmt.Errorf("observability.notifications.sinks[%d]: unknown type %q (want teams|slack)", i, s.Type)
+		}
+		sink := s
+		sink.Type = typ
+		if sink.WebhookURLFromEnv == "" {
+			switch sink.Type {
+			case "teams":
+				sink.WebhookURLFromEnv = "XP_CLEAN_TEAMS_WEBHOOK_URL"
+			case "slack":
+				sink.WebhookURLFromEnv = "XP_CLEAN_SLACK_WEBHOOK_URL"
+			}
+		}
+		out.Sinks = append(out.Sinks, sink)
+	}
+	return out, nil
 }
 
 func hasGlobs(s match.Selectors) bool {

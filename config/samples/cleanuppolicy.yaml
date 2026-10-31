@@ -30,3 +30,20 @@ deletion:
 observability:
   auditConfigMapNamespace: xp-clean
   verbosity: normal
+  # Notifications are disabled until enabled: true. Webhook URLs stay in env/Secrets
+  # (never inline here). Multi-sink schema; Teams Workflows is the MVP implementation.
+  notifications:
+    enabled: false
+    notifyOn: [started, finished, failed]
+    onDryRun: true
+    onSuccessWithZeroDeletes: false
+    onPartialErrors: true
+    sinks:
+      - type: teams
+        webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL
+        # Optional log deep-link; {{runId}} is substituted per event.
+        # logURLTemplate: "https://logs.example/search?q={{runId}}"
+      # Phase 2:
+      # - type: slack
+      #   webhookURLFromEnv: XP_CLEAN_SLACK_WEBHOOK_URL
+

@@ -74,3 +74,36 @@ func TestEnvConfigPath(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestNotifyOverrides(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: t
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+observability:
+  notifications:
+    enabled: false
+    onDryRun: true
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath:        path,
+		NotifySet:         true,
+		Notify:            true,
+		NotifyOnDryRunSet: true,
+		NotifyOnDryRun:    false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r.Notifications.Enabled {
+		t.Fatal("notify override")
+	}
+	if r.Notifications.OnDryRun {
+		t.Fatal("onDryRun override")
+	}
+}

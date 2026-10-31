@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -8,9 +9,11 @@ import (
 
 	"github.com/kanzifucius/xp-clean/cmd/xp-clean/options"
 	"github.com/kanzifucius/xp-clean/internal/cli/exit"
+	clinotify "github.com/kanzifucius/xp-clean/internal/cli/notify"
 	clipolicy "github.com/kanzifucius/xp-clean/internal/cli/policy"
 	"github.com/kanzifucius/xp-clean/pkg/audit"
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
+	"github.com/kanzifucius/xp-clean/pkg/notify"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +28,8 @@ func newRunCommand(g *options.Global) *cobra.Command {
 		Long: `Run invokes the shared cleanup.Runner once and exits.
 
 Dry-run defaults come from the policy file (default true) unless --dry-run is set.
---scope overrides deletion.scope (instances-only|all). Use manager for scheduled loops.`,
+--scope overrides deletion.scope (instances-only|all). Use manager for scheduled loops.
+Optional Teams/Slack notifications wrap RunOnce and never change cleanup exit codes.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)
@@ -35,6 +39,11 @@ Dry-run defaults come from the policy file (default true) unless --dry-run is se
 			}
 
 			policy, err := pf.Load(cmd.Flags(), false)
+			if err != nil {
+				return classifyConfigErr(err)
+			}
+
+			notifier, err := clinotify.Build(policy.Notifications)
 			if err != nil {
 				return classifyConfigErr(err)
 			}
@@ -56,8 +65,18 @@ Dry-run defaults come from the policy file (default true) unless --dry-run is se
 				Audit:   audit.NewLogger(os.Stdout),
 				Out:     os.Stdout,
 			}
-			g.Logger.Info("run once", "policy", policy.Name, "dryRun", policy.DryRun, "scope", policy.Deletion.Scope)
-			result, err := runner.RunOnce(ctx, clipolicy.ToPolicyView(policy))
+			g.Logger.Info("run once", "policy", policy.Name, "dryRun", policy.DryRun, "scope", policy.Deletion.Scope, "notify", policy.Notifications.Enabled)
+
+			meta := notify.RunMeta{
+				Policy: policy.Name,
+				DryRun: policy.DryRun,
+				Scope:  string(policy.Deletion.Scope),
+			}
+			result, err := notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
+				return runner.RunOnce(ctx, clipolicy.ToPolicyView(policy))
+			}, func(nerr error) {
+				g.Logger.Info("notify warning", "err", nerr)
+			})
 			if err != nil {
 				return exit.RuntimeErr(fmt.Errorf("run failed: %w", err))
 			}

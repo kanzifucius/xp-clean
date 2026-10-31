@@ -16,12 +16,14 @@ import (
 
 // PolicyFlags are product flags shared by run/plan/manager.
 type PolicyFlags struct {
-	ConfigPath string
-	DryRun     bool
-	Scope      string
+	ConfigPath     string
+	DryRun         bool
+	Scope          string
+	Notify         bool
+	NotifyOnDryRun bool
 }
 
-// Bind registers --config / --dry-run / --scope on a command flag set.
+// Bind registers --config / --dry-run / --scope / notify flags on a command flag set.
 func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
 	fs.StringVar(&p.ConfigPath, "config", "", "path to CleanupPolicy YAML (default: XP_CLEAN_CONFIG or config/samples/cleanuppolicy.yaml)")
 	if withDryRun {
@@ -29,6 +31,8 @@ func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
 		fs.BoolVar(&p.DryRun, "dry-run", false, "planner dry-run only (no deletes); when unset, use policy dryRun (default true). Not kubectl API-server dry-run")
 	}
 	fs.StringVar(&p.Scope, "scope", "", "deletion.scope override: instances-only|all (default from policy, then instances-only)")
+	fs.BoolVar(&p.Notify, "notify", false, "override observability.notifications.enabled (webhook URL still from env)")
+	fs.BoolVar(&p.NotifyOnDryRun, "notify-on-dry-run", true, "override observability.notifications.onDryRun")
 }
 
 // Load merges file + env + flags into a resolved policy.
@@ -41,6 +45,14 @@ func (p *PolicyFlags) Load(fs *pflag.FlagSet, forceDryRun bool) (conf.Resolved, 
 	if fs != nil && fs.Lookup("dry-run") != nil && fs.Changed("dry-run") {
 		o.DryRunSet = true
 		o.DryRun = p.DryRun
+	}
+	if fs != nil && fs.Lookup("notify") != nil && fs.Changed("notify") {
+		o.NotifySet = true
+		o.Notify = p.Notify
+	}
+	if fs != nil && fs.Lookup("notify-on-dry-run") != nil && fs.Changed("notify-on-dry-run") {
+		o.NotifyOnDryRunSet = true
+		o.NotifyOnDryRun = p.NotifyOnDryRun
 	}
 	return policy.LoadAndMerge(o)
 }
