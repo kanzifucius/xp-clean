@@ -30,6 +30,6 @@ jobs:
       - name: golangci-lint
         # v6 resolves "latest" to golangci-lint v1, which is built with Go <1.26.
         # v8+ installs golangci-lint v2 (matches .golangci.yml version: "2").
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
