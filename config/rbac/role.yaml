@@ -1,0 +1,34 @@
+# Sketch ClusterRole for lab clusters (rbacMode: broad).
+# Tighten per matched XRD GVK before production use. No claim RBAC on purpose.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: xp-clean
+rules:
+  - apiGroups: ["apiextensions.crossplane.io"]
+    resources: ["compositeresourcedefinitions", "compositions", "compositionrevisions"]
+    verbs: ["get", "list", "watch"]
+  # Definition deletes only when deletion.scope=all and gates pass.
+  - apiGroups: ["apiextensions.crossplane.io"]
+    resources: ["compositeresourcedefinitions", "compositions", "compositionrevisions"]
+    verbs: ["delete"]
+  # Broad instance access for MVP labs — replace with generated per-GVK rules.
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: xp-clean
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: xp-clean
+subjects:
+  - kind: ServiceAccount
+    name: xp-clean
+    namespace: xp-clean
