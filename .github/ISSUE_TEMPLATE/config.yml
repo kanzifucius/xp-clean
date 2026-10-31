@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/kanzifucius/xp-clean/security/advisories/new
+    about: Please report security issues privately (do not open a public issue).
+  - name: Documentation site
+    url: https://kanzifucius.github.io/xp-clean/
+    about: User and architecture docs (MkDocs + mike).

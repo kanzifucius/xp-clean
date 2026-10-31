@@ -4,6 +4,7 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-teal)](https://kanzifucius.github.io/xp-clean/)
 [![GitHub release](https://img.shields.io/github/v/release/kanzifucius/xp-clean?include_prereleases&sort=semver)](https://github.com/kanzifucius/xp-clean/releases)
 [![Go version](https://img.shields.io/github/go-mod/go-version/kanzifucius/xp-clean)](https://github.com/kanzifucius/xp-clean/blob/main/go.mod)
+[![License](https://img.shields.io/github/license/kanzifucius/xp-clean)](LICENSE)
 
 Scheduled discovery and cleanup of Crossplane composition trees (test GVKs and leftover instances).
 
@@ -47,7 +48,7 @@ There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + 
 
 ### Pull a private image
 
-The package stays **private** (matches the private repo). Authenticate, then pull:
+The GHCR package stays **private** by preference (even though this GitHub repository is public). Authenticate, then pull:
 
 ```bash
 # PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
@@ -193,4 +194,10 @@ Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Pr
 
 ## Licence
 
-Apache-2.0 (or as stated by the repository owner).
+Licensed under the [Apache License 2.0](LICENSE).
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security](SECURITY.md)

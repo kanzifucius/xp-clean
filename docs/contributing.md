@@ -4,6 +4,11 @@ Source, issues, and pull requests live in the GitHub repository:
 
 **[https://github.com/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean)**
 
+Repository-level contribution guide, Code of Conduct, and security reporting:
+[`CONTRIBUTING.md`](https://github.com/kanzifucius/xp-clean/blob/main/CONTRIBUTING.md),
+[`CODE_OF_CONDUCT.md`](https://github.com/kanzifucius/xp-clean/blob/main/CODE_OF_CONDUCT.md),
+[`SECURITY.md`](https://github.com/kanzifucius/xp-clean/blob/main/SECURITY.md).
+
 ## Local checks
 
 ```bash
