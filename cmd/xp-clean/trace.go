@@ -36,9 +36,8 @@ Use --name namespace/name, or a bare name with --namespace / -n.`,
 			if ns == "" {
 				ns = g.Kube.Namespace
 			}
-			if ns == "" && !isClusterScopedHint(kind) {
-				// Namespaced XRs need a namespace; leave empty for cluster-scoped attempts.
-			}
+			// Namespace may remain empty for cluster-scoped XRs; discovery-backed
+			// scope checks can tighten this later.
 
 			cfg, err := g.RESTConfig()
 			if err != nil {
@@ -89,5 +88,3 @@ Use --name namespace/name, or a bare name with --namespace / -n.`,
 	cmd.Flags().StringVarP(&output, "output", "o", "text", "output format: text|json|yaml")
 	return cmd
 }
-
-func isClusterScopedHint(_ string) bool { return false }

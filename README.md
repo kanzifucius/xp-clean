@@ -18,8 +18,53 @@ Xp-clean targets **Crossplane v2-native** stacks only (**Namespaced** / modern *
 
 ```bash
 make test
-make build   # writes bin/xp-clean with version ldflags
+make build   # writes bin/xp-clean with version ldflags (Version, GitCommit, BuildDate)
 ```
+
+## Install / release artefacts
+
+Tagged SemVer releases (`v*`) publish:
+
+1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
+2. **Private GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
+
+Image tags:
+
+| Tag | Meaning |
+|-----|---------|
+| `:vX.Y.Z` | Immutable pin (prefer this in clusters) |
+| `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
+| `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
+
+There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + golangci-lint only.
+
+### Pull a private image
+
+The package stays **private** (matches the private repo). Authenticate, then pull:
+
+```bash
+# PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
+echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
+docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
+```
+
+In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `ghcr.io/kanzifucius/xp-clean`.
+
+### Cut a release (maintainers)
+
+1. Ensure `main` is green.
+2. Tag and push (do not create the Release in the UI):
+
+```bash
+git checkout main && git pull
+git tag -a v0.1.0 -m "v0.1.0"
+git push origin v0.1.0
+```
+
+3. Watch the `release` workflow; confirm the GitHub Release assets and `docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0`.
+4. Spot-check `xp-clean version -o json` from the archive or image (`0.1.0`, matching the tag without the leading `v`).
+
+Local smoke (no push): `goreleaser release --snapshot --clean`.
 
 ## Layout
 

@@ -71,19 +71,24 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 	if w == nil {
 		w = os.Stderr
 	}
+<<<<<<< HEAD
 	fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
 		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
+=======
+	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
+		policy.Name, policy.DryRun, policy.Deletion.Scope, len(result.Traces), len(result.Plans))
+>>>>>>> e2bbad2 (Add GoReleaser, private GHCR, and CI release plumbing)
 	for _, tr := range result.Traces {
-		fmt.Fprint(w, trace.RenderText(tr))
+		_, _ = fmt.Fprint(w, trace.RenderText(tr))
 	}
 	for _, p := range result.Plans {
 		if len(p.BlockedBy) > 0 {
-			fmt.Fprintf(w, "plan %s blocked: %v\n", p.TraceID, p.BlockedBy)
+			_, _ = fmt.Fprintf(w, "plan %s blocked: %v\n", p.TraceID, p.BlockedBy)
 			continue
 		}
-		fmt.Fprintf(w, "plan %s steps=%d dryRun=%v\n", p.TraceID, len(p.Steps), p.DryRun)
+		_, _ = fmt.Fprintf(w, "plan %s steps=%d dryRun=%v\n", p.TraceID, len(p.Steps), p.DryRun)
 		for i, s := range p.Steps {
-			fmt.Fprintf(w, "  %d. %s %s/%s\n", i+1, s.Action, s.Kind, s.Ref.Key())
+			_, _ = fmt.Fprintf(w, "  %d. %s %s/%s\n", i+1, s.Action, s.Kind, s.Ref.Key())
 		}
 	}
 }
