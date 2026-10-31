@@ -1,4 +1,4 @@
-# Notifications (Teams)
+# Notifications
 
 Chat summaries sit **beside** stdout audit JSON and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
 
@@ -45,3 +45,5 @@ Mount the Secret as an env var on the Job / CronJob / Deployment. Overrides:
 ## Failure isolation
 
 Notify failures are logged and ignored for exit codes. Missing webhook config is a noop. Partial multi-sink failure does not fail cleanup. Audit JSON remains authoritative for what was deleted.
+
+Sequence diagram: [Teams sequence](../architecture/sequence.md).

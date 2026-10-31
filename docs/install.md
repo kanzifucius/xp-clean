@@ -23,6 +23,12 @@ Install the latest **non-prerelease** binary into `~/.local/bin` (created if mis
 curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
 ```
 
+Until the first non-prerelease cut, pin the current pre-release explicitly (for example `v0.1.0-rc.1`):
+
+```bash
+XP_CLEAN_VERSION=v0.1.0-rc.1 curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
+```
+
 ### Pin a version
 
 ```bash
@@ -30,6 +36,8 @@ XP_CLEAN_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/kanzifucius
 # or:
 curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash -s -- --version v0.1.0
 ```
+
+Use `XP_CLEAN_VERSION` (or `--version`) for any tag — including RCs such as `v0.1.0-rc.1`. Omit it only when you want the latest **non-prerelease**.
 
 ### Download, inspect, then run
 
@@ -45,7 +53,7 @@ bash install.sh
 
 | Mechanism | Purpose |
 |-----------|---------|
-| `XP_CLEAN_VERSION` / `--version` | Pin tag (`v0.1.0`); omit for latest non-prerelease |
+| `XP_CLEAN_VERSION` / `--version` | Pin tag (`v0.1.0`, `v0.1.0-rc.1`, …); omit for latest non-prerelease |
 | `XP_CLEAN_INSTALL_DIR` / `--install-dir` / `BINDIR` | Override install directory (default `~/.local/bin`) |
 | `GITHUB_TOKEN` / `GH_TOKEN` | Optional — API rate limits, GHES, or a private fork |
 

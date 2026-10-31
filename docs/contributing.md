@@ -25,9 +25,16 @@ mkdocs build --strict
 mkdocs serve   # http://127.0.0.1:8000
 ```
 
-Versioned deploys use [mike](https://github.com/jimporter/mike) on the `gh-pages` branch (see `.github/workflows/docs.yml`). Prefer editing Markdown under `docs/` and `mkdocs.yml` on a feature branch; CI builds docs on PRs that touch the docs toolchain.
+Site layout (Material tabs): **Home → Install → Concepts → Architecture → CLI → Operations → Contributing**.
+
+- Theme tokens and Archify iframe styles: `docs/stylesheets/extra.css`
+- Architecture diagrams: standalone HTML under `docs/architecture/` plus caption pages that embed them
+- Versioned deploys use [mike](https://github.com/jimporter/mike) on the `gh-pages` branch (see `.github/workflows/docs.yml`)
+
+Prefer editing Markdown under `docs/` and `mkdocs.yml` on a feature branch; CI builds docs on PRs that touch the docs toolchain.
 
 ## Conventions
 
 - British English in user-facing docs.
 - Prefer ConfigMap / file policy samples that match locked product decisions (eligibility labels/globs, `instances-only` default, Teams notify schema, no claim support).
+- Do not invent a second diagram system — regenerate Archify HTML when diagrams need updating.

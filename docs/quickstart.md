@@ -52,4 +52,4 @@ go run ./cmd/xp-clean trace \
     - **Job / CronJob:** `xp-clean run --once` (loads ConfigMaps; optional `--config` override)
     - **Deployment:** `xp-clean manager` (interval stub; controller-runtime later)
 
-See [ConfigMap policy](configmap-policy.md) and [Install and releases](install.md) for GHCR pull and release notes.
+See [Policy and eligibility](concepts/policy.md) and [Install](install.md) for ConfigMap samples, GHCR pull, and release notes.
