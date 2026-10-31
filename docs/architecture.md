@@ -4,13 +4,14 @@ The locked architecture plan for Xp-clean lives in the project store:
 
 - Cursor Project: `docs/xp-clean-architecture-plan.md`
 
-This MVP implements the plan’s MVP slice:
+This repository implements the MVP product slice plus the Cobra / Go layout migration from plan §8 and §11:
 
 - Dynamic XRD discovery + instance trace build (no claims)
-- Eligibility via labels and/or globs + TTL
+- Eligibility via labels and/or globs + TTL (`pkg/match`)
 - `deletion.scope` with default `instances-only`
 - Dry-run planner + optional deletes
 - File/ConfigMap policy; manager schedule stub; audit JSON + metrics stubs
-- CLI `run --once` / `plan` / `trace` / `manager`
+- Cobra CLI: `run` / `plan` / `trace` / `manager` / `version` / `completion`
+- Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`
 
-Deferred (v1+): CleanupPolicy CRD, CompositionTrace status, full Prometheus exporters, Helm chart, RBAC generator, multi-cluster.
+Deferred: CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart, RBAC generator, kubectl plugin alias, multi-cluster.

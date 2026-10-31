@@ -7,64 +7,78 @@ Xp-clean targets **Crossplane v2-native** stacks only (**Namespaced** / modern *
 ## Features (MVP)
 
 - Discover CompositeResourceDefinitions and build parent→child **traces** (XR → `spec.crossplane.resourceRefs` → children; nested XRs supported).
-- Match eligibility with **labels and/or glob patterns** (AND when both are set).
+- Match eligibility with **labels and/or glob patterns** (AND when both are set) via `pkg/match` (eligibility in the architecture plan).
 - Plan deletions with configurable **`deletion.scope`**: `instances-only` (default) or `all`.
-- **Dry-run by default** — builds an ordered delete plan and emits JSON audit lines without deleting.
-- CLI: `run --once`, `plan`, `trace`, and a thin `manager` schedule stub.
+- **Dry-run by default** — planner dry-run (client-side `DeletePlan` only; not kubectl API-server dry-run).
+- Cobra CLI: `run`, `plan`, `trace`, `manager`, `version`, `completion`.
 
 ## Build
 
 ```bash
-go build -o bin/xp-clean ./cmd/xp-clean
-go test ./...
+make test
+make build   # writes bin/xp-clean with version ldflags
 ```
+
+## Layout
+
+Follows typical Go / Kubernetes operator layout (see architecture plan §11):
+
+| Path | Role |
+|------|------|
+| `cmd/xp-clean/` | Thin Cobra entrypoints (`main`, `root`, subcommands, `options/`) |
+| `internal/cli/` | Cobra-agnostic helpers: kube `clientcmd`, logging, exit codes, policy overrides |
+| `internal/conf`, `internal/controller`, `internal/version` | Config load, schedule stub, build metadata |
+| `pkg/` | Importable domain library (`discover`, `trace`, `match`, `cleanup`, …) — no Cobra |
+| `config/` | Samples + RBAC manifests |
+
+Domain stays in `pkg/` so CLI and a future controller share one `cleanup.Runner`.
 
 ## Configuration
 
-Policy file (ConfigMap substitute for a future `CleanupPolicy` CRD): see [`config/samples/cleanuppolicy.yaml`](config/samples/cleanuppolicy.yaml).
+Policy file (ConfigMap substitute for a future `CleanupPolicy` CRD): [`config/samples/cleanuppolicy.yaml`](config/samples/cleanuppolicy.yaml).
 
-Important fields:
+**Precedence:** flags > env (`XP_CLEAN_CONFIG`, `XP_CLEAN_DRY_RUN`, `XP_CLEAN_SCOPE`) > policy document > built-in defaults. No Viper.
 
-| Field | Meaning |
-|-------|---------|
-| `selectors.requireLabels` | Label constraints (e.g. `xp-clean.io/eligible=true`) |
-| `selectors.globs` | Name / namespace / GVK globs (`filepath.Match`; `*` does not cross `/`) |
-| `deletion.scope` | `instances-only` (default) or `all` |
-| `dryRun` | Default `true` |
+| Field / flag | Meaning |
+|--------------|---------|
+| `selectors.requireLabels` / globs | Labels and/or globs (required non-empty) |
+| `deletion.scope` / `--scope` | `instances-only` (default) \| `all` |
+| `dryRun` / `--dry-run` | Planner dry-run; unset flag keeps policy value (default true) |
+| `--kubeconfig`, `--context`, `-n` | kubectl-style access; `-n` is for `trace` only (rejected on `run`/`plan`) |
 
-Empty label **and** empty glob selectors are rejected — namespace alone is never enough.
+## CLI
+
+```text
+xp-clean run --once [--config PATH] [--dry-run] [--scope instances-only|all] [--kubeconfig PATH] [--context NAME]
+xp-clean plan [--config PATH] [--scope …] [-o json|yaml]
+xp-clean trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
+xp-clean manager [--config PATH]
+xp-clean version [-o short|json|yaml]
+xp-clean completion bash|zsh|fish|powershell
+```
+
+Logging uses zap/logr on stderr (`--zap-devel`, `--zap-log-level`, `--zap-encoder`). Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on stdout.
 
 ## Run a dry-run locally
 
-Requires a kubeconfig that can list XRDs and the XR GVKs your selectors match (e.g. a kind / k3d cluster with Crossplane).
+Requires a kubeconfig that can list XRDs and the XR GVKs your selectors match.
 
 ```bash
-# From the repo root
 go run ./cmd/xp-clean run --once \
   --config config/samples/cleanuppolicy.yaml \
   --dry-run=true \
   --kubeconfig "$HOME/.kube/config"
 ```
 
-Or print plans as JSON:
-
 ```bash
-go run ./cmd/xp-clean plan --config config/samples/cleanuppolicy.yaml
+go run ./cmd/xp-clean plan --config config/samples/cleanuppolicy.yaml -o json
 ```
-
-Trace one XR (no delete):
 
 ```bash
 go run ./cmd/xp-clean trace \
-  --name xp-test-1/test-db \
+  --name test-db -n xp-test-1 \
   --group db.dev.example.org \
   --kind XDB
-```
-
-Override scope (still dry-run unless you also set dry-run false in config/flags):
-
-```bash
-go run ./cmd/xp-clean run --once --scope=all --dry-run=true
 ```
 
 Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.
@@ -72,24 +86,18 @@ Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Pr
 ## In-cluster sketch
 
 1. Build/push an image containing `xp-clean`.
-2. Deploy a ServiceAccount + ClusterRole (read XRDs/Compositions; get/list/watch/delete matched instance GVKs — see [`config/rbac/role.yaml`](config/rbac/role.yaml)).
-3. Mount the policy as a ConfigMap file at `/config/policy.yaml`.
+2. Deploy a ServiceAccount + ClusterRole — see [`config/rbac/role.yaml`](config/rbac/role.yaml).
+3. Mount the policy as a ConfigMap at `/config/policy.yaml`.
 4. Run either:
    - **Job / CronJob:** `xp-clean run --once --config /config/policy.yaml`
-   - **Deployment:** `xp-clean manager --config /config/policy.yaml` (MVP uses a simple interval stub derived from `schedule`)
-
-Leader election and a full `CleanupPolicy` CRD reconciler are deferred past this MVP.
+   - **Deployment:** `xp-clean manager --config /config/policy.yaml` (interval stub; controller-runtime later)
 
 ## Safety notes
 
-- Default scope deletes **instances only** (XR roots; children follow via ownerReferences / Crossplane GC).
-- With `scope: all`, definition order is CompositionRevision → Composition → XRD; XRD deletion also requires `allowXRDDeletion: true`.
+- Default scope deletes **instances only**.
+- With `scope: all`, order is CompositionRevision → Composition → XRD; XRD also needs `allowXRDDeletion: true`.
 - `xp-clean.io/keep=true` skips the whole trace; paused resources are skipped unless `deletePaused: true`.
-- Do not point broad globs at production without a dry-run first.
-
-## Layout
-
-See the locked architecture plan (linked from [`docs/architecture.md`](docs/architecture.md)) for package responsibilities: `discover`, `trace`, `match`, `cleanup`, schedule/config, and observability stubs.
+- Namespace alone never implies eligibility.
 
 ## Licence
 
