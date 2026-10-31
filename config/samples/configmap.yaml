@@ -41,3 +41,10 @@ data:
       waitTimeout: 30m
     observability:
       verbosity: normal
+      notifications:
+        enabled: false
+        notifyOn: [started, finished, failed]
+        onDryRun: true
+        sinks:
+          - type: teams
+            webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL

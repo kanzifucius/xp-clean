@@ -32,6 +32,14 @@ type FlagOverrides struct {
 
 	// ForceDryRun forces dry-run on after merge (used by plan).
 	ForceDryRun bool
+
+	// NotifySet is true when --notify was explicitly passed.
+	NotifySet bool
+	Notify    bool
+
+	// NotifyOnDryRunSet is true when --notify-on-dry-run was explicitly passed.
+	NotifyOnDryRunSet bool
+	NotifyOnDryRun    bool
 }
 
 // ResolveConfigPath picks --config, then XP_CLEAN_CONFIG. Empty means no file
@@ -56,8 +64,8 @@ func ResolvePolicyNamespace(flagNS string) string {
 	return conf.DefaultPolicyNamespace
 }
 
-// ApplyEnv overlays XP_CLEAN_DRY_RUN / XP_CLEAN_SCOPE when the corresponding
-// flag was not set. Call before ApplyFlags or merge inside LoadAndMerge.
+// ApplyEnv overlays XP_CLEAN_* env vars when the corresponding flag was not set.
+// Call before ApplyFlags or merge inside LoadAndMerge.
 func ApplyEnv(o *FlagOverrides) error {
 	if !o.DryRunSet {
 		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_DRY_RUN")); v != "" {
@@ -72,6 +80,26 @@ func ApplyEnv(o *FlagOverrides) error {
 	if o.Scope == "" {
 		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_SCOPE")); v != "" {
 			o.Scope = v
+		}
+	}
+	if !o.NotifySet {
+		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_NOTIFY")); v != "" {
+			b, err := parseBool(v)
+			if err != nil {
+				return fmt.Errorf("XP_CLEAN_NOTIFY: %w", err)
+			}
+			o.NotifySet = true
+			o.Notify = b
+		}
+	}
+	if !o.NotifyOnDryRunSet {
+		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_NOTIFY_ON_DRY_RUN")); v != "" {
+			b, err := parseBool(v)
+			if err != nil {
+				return fmt.Errorf("XP_CLEAN_NOTIFY_ON_DRY_RUN: %w", err)
+			}
+			o.NotifyOnDryRunSet = true
+			o.NotifyOnDryRun = b
 		}
 	}
 	return nil
@@ -156,6 +184,12 @@ func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
 			return fmt.Errorf("invalid --scope: %w", err)
 		}
 		policy.Deletion.Scope = s
+	}
+	if o.NotifySet {
+		policy.Notifications.Enabled = o.Notify
+	}
+	if o.NotifyOnDryRunSet {
+		policy.Notifications.OnDryRun = o.NotifyOnDryRun
 	}
 	return nil
 }

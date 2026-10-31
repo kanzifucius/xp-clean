@@ -88,7 +88,7 @@ Domain stays in `pkg/` so CLI and a future controller share one `cleanup.Runner`
 
 Sample file document (for `--config` only): [`config/samples/cleanuppolicy.yaml`](config/samples/cleanuppolicy.yaml).
 
-**Precedence:** flags > env (`XP_CLEAN_CONFIG`, `XP_CLEAN_POLICY_NAMESPACE`, `XP_CLEAN_DRY_RUN`, `XP_CLEAN_SCOPE`) > policy document > built-in defaults. No Viper.
+**Precedence:** flags > env (`XP_CLEAN_CONFIG`, `XP_CLEAN_POLICY_NAMESPACE`, `XP_CLEAN_DRY_RUN`, `XP_CLEAN_SCOPE`, `XP_CLEAN_NOTIFY`, `XP_CLEAN_NOTIFY_ON_DRY_RUN`) > policy document > built-in defaults. No Viper. Webhook URLs come only from env vars named by each sink (`XP_CLEAN_TEAMS_WEBHOOK_URL` by default).
 
 | Field / flag | Meaning |
 |--------------|---------|
@@ -98,14 +98,40 @@ Sample file document (for `--config` only): [`config/samples/cleanuppolicy.yaml`
 | `deletion.scope` / `--scope` | `instances-only` (default) \| `all` |
 | `dryRun` / `--dry-run` | Boolean planner dry-run; unset flag keeps policy value (default true) |
 | `--fail-on-blocked` | Exit **3** when the run completed with blocked plans |
+| `observability.notifications` | Optional Teams (MVP) / Slack (schema-ready) run hooks — see below |
+| `--notify`, `--notify-on-dry-run` | Override `notifications.enabled` / `onDryRun` |
 | `--kubeconfig`, `--context`, `-n` | kubectl-style access; `-n` is for `trace` only (**rejected** on `run`/`plan`) |
 
 Audit events go to **stdout** JSON only for now — no audit ConfigMap / object-storage retention sink.
 
+### Run notification hooks (Teams Workflows)
+
+Chat summaries sit beside audit JSON and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
+
+1. In Teams, create a **Workflow** (platform-team or channel-owner owned — both are valid; prefer co-owners) with trigger **When a Teams webhook request is received**, then **Post card in a chat or channel**.
+2. Copy the Workflow callback URL into a Kubernetes Secret (or local env) as `XP_CLEAN_TEAMS_WEBHOOK_URL`. Never commit the URL to git or put it in the ConfigMap policy body.
+3. Enable notifications in the policy ConfigMap / `--config` file:
+
+```yaml
+observability:
+  notifications:
+    enabled: true
+    notifyOn: [started, finished, failed]
+    onDryRun: true
+    sinks:
+      - type: teams
+        webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL
+        logURLTemplate: "https://logs.example/search?q={{runId}}"  # optional
+```
+
+4. Mount the Secret as an env var on the Job/CronJob/Deployment and run as usual (`xp-clean run --once` or `manager`). Overrides: `--notify=true` / `XP_CLEAN_NOTIFY=true`, `--notify-on-dry-run` / `XP_CLEAN_NOTIFY_ON_DRY_RUN`.
+
+SSRF host allow-lists are guidance-only for MVP (https-only client; no redirect following). Slack Incoming Webhooks share the same `sinks` list but are not implemented yet.
+
 ## CLI
 
 ```text
-xp-clean run --once [--config PATH] [--policy-namespace NS] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--kubeconfig PATH] [--context NAME]
+xp-clean run --once [--config PATH] [--policy-namespace NS] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
 xp-clean plan [--config PATH] [--policy-namespace NS] [--scope …] [--fail-on-blocked] [-o json|yaml]
 xp-clean trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
 xp-clean manager [--config PATH] [--policy-namespace NS]

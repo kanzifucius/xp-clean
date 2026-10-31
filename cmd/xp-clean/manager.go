@@ -9,6 +9,7 @@ import (
 
 	"github.com/kanzifucius/xp-clean/cmd/xp-clean/options"
 	"github.com/kanzifucius/xp-clean/internal/cli/exit"
+	clinotify "github.com/kanzifucius/xp-clean/internal/cli/notify"
 	clipolicy "github.com/kanzifucius/xp-clean/internal/cli/policy"
 	"github.com/kanzifucius/xp-clean/internal/conf"
 	"github.com/kanzifucius/xp-clean/internal/controller"
@@ -16,6 +17,7 @@ import (
 	"github.com/kanzifucius/xp-clean/pkg/audit"
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
 	"github.com/kanzifucius/xp-clean/pkg/metrics"
+	"github.com/kanzifucius/xp-clean/pkg/notify"
 	"github.com/spf13/cobra"
 )
 
@@ -28,8 +30,9 @@ func newManagerCommand(g *options.Global) *cobra.Command {
 		Long: `Manager loads labelled policy ConfigMaps from --policy-namespace (or an
 explicit --config file) and runs the shared cleanup.Runner on an interval
 derived from policy.schedule. Multiple ConfigMaps are supported for per-team
-policies. Full controller-runtime (leader election, health probes, CR watches)
-is deferred; flags for those will land with the CRD.`,
+policies. Each scheduled RunOnce uses the same notification hooks as run --once.
+Full controller-runtime (leader election, health probes, CR watches) is deferred;
+flags for those will land with the CRD.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)
@@ -50,7 +53,21 @@ is deferred; flags for those will land with the CRD.`,
 				Out:     os.Stdout,
 			}
 			runFn := func(ctx context.Context, p conf.Resolved) error {
-				_, err := runner.RunOnce(ctx, clipolicy.ToPolicyView(p))
+				notifier, err := clinotify.Build(p.Notifications)
+				if err != nil {
+					g.Logger.Info("notify config warning", "policy", p.Name, "err", err)
+					notifier = notify.Noop{}
+				}
+				meta := notify.RunMeta{
+					Policy: p.Name,
+					DryRun: p.DryRun,
+					Scope:  string(p.Deletion.Scope),
+				}
+				_, err = notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
+					return runner.RunOnce(ctx, clipolicy.ToPolicyView(p))
+				}, func(nerr error) {
+					g.Logger.Info("notify warning", "err", nerr)
+				})
 				return err
 			}
 			_ = &controller.CleanupPolicyReconciler{Policies: policies, Run: runFn, Log: g.Logger}

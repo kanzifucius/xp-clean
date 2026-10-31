@@ -22,9 +22,11 @@ type PolicyFlags struct {
 	DryRun          bool
 	Scope           string
 	FailOnBlocked   bool
+	Notify          bool
+	NotifyOnDryRun  bool
 }
 
-// Bind registers --config / --dry-run / --scope / ConfigMap flags on a command.
+// Bind registers --config / --dry-run / --scope / ConfigMap / notify flags on a command.
 func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
 	fs.StringVar(&p.ConfigPath, "config", "", "path to policy YAML file override (explicit; no implicit sample path). When unset, load labelled ConfigMaps from --policy-namespace")
 	fs.StringVar(&p.PolicyNamespace, "policy-namespace", "", "namespace for labelled policy ConfigMaps (default: xp-clean or XP_CLEAN_POLICY_NAMESPACE)")
@@ -34,6 +36,8 @@ func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
 	}
 	fs.StringVar(&p.Scope, "scope", "", "deletion.scope override: instances-only|all (default from policy, then instances-only)")
 	fs.BoolVar(&p.FailOnBlocked, "fail-on-blocked", false, "exit 3 when the run completed with blocked plans")
+	fs.BoolVar(&p.Notify, "notify", false, "override observability.notifications.enabled (webhook URL still from env)")
+	fs.BoolVar(&p.NotifyOnDryRun, "notify-on-dry-run", true, "override observability.notifications.onDryRun")
 }
 
 // Overrides builds FlagOverrides from flags (including dry-run Changed state).
@@ -47,6 +51,14 @@ func (p *PolicyFlags) Overrides(fs *pflag.FlagSet, forceDryRun bool) policy.Flag
 	if fs != nil && fs.Lookup("dry-run") != nil && fs.Changed("dry-run") {
 		o.DryRunSet = true
 		o.DryRun = p.DryRun
+	}
+	if fs != nil && fs.Lookup("notify") != nil && fs.Changed("notify") {
+		o.NotifySet = true
+		o.Notify = p.Notify
+	}
+	if fs != nil && fs.Lookup("notify-on-dry-run") != nil && fs.Changed("notify-on-dry-run") {
+		o.NotifyOnDryRunSet = true
+		o.NotifyOnDryRun = p.NotifyOnDryRun
 	}
 	return o
 }
