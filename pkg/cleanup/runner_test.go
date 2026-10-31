@@ -80,3 +80,22 @@ func TestRunnerDryRunMemoryBackend(t *testing.T) {
 		t.Fatalf("dry-run should not delete: %v", err)
 	}
 }
+
+func TestHasBlockedPlans(t *testing.T) {
+	if cleanup.HasBlockedPlans(nil) {
+		t.Fatal("nil plans should not be blocked")
+	}
+	if cleanup.HasBlockedPlans([]cleanup.DeletePlan{{TraceID: "ok", Steps: []cleanup.DeleteStep{{}}}}) {
+		t.Fatal("unblocked plan")
+	}
+	if !cleanup.HasBlockedPlans([]cleanup.DeletePlan{{TraceID: "b", BlockedBy: []string{"keep"}}}) {
+		t.Fatal("expected blocked")
+	}
+	merged := cleanup.MergeRunResults(
+		cleanup.RunResult{Plans: []cleanup.DeletePlan{{TraceID: "a"}}},
+		cleanup.RunResult{Plans: []cleanup.DeletePlan{{TraceID: "b", BlockedBy: []string{"x"}}}},
+	)
+	if !cleanup.HasBlockedPlans(merged.Plans) {
+		t.Fatal("merged should report blocked")
+	}
+}

@@ -2,29 +2,34 @@ package controller
 
 import (
 	"context"
-	"log/slog"
 
+	"github.com/go-logr/logr"
 	"github.com/kanzifucius/xp-clean/internal/conf"
 )
 
 // CleanupPolicyReconciler is an MVP stub for the future CleanupPolicy CRD watch.
-// For now it loads a file/ConfigMap policy and hands it to the shared Runner.
+// Today it holds resolved ConfigMap/file policies and hands them to the shared Runner.
 type CleanupPolicyReconciler struct {
-	Policy conf.Resolved
-	Run    RunnerFunc
-	Log    *slog.Logger
+	Policies []conf.Resolved
+	Run      RunnerFunc
+	Log      logr.Logger
 }
 
-// ReconcileOnce executes a single cleanup pass (used by `xp-clean manager` stub
-// and by tests). Full controller-runtime wiring is deferred past MVP scaffold.
+// ReconcileOnce executes a single cleanup pass per policy (used by `xp-clean manager`
+// stub and by tests). Full controller-runtime wiring is deferred past MVP.
 func (r *CleanupPolicyReconciler) ReconcileOnce(ctx context.Context) error {
-	if r.Log == nil {
-		r.Log = slog.Default()
+	if r.Log.GetSink() == nil {
+		r.Log = logr.Discard()
 	}
 	if r.Run == nil {
-		r.Log.Info("reconcile stub: no runner configured", "policy", r.Policy.Name)
+		r.Log.Info("reconcile stub: no runner configured", "policies", len(r.Policies))
 		return nil
 	}
-	r.Log.Info("reconcile once", "policy", r.Policy.Name, "dryRun", r.Policy.DryRun, "scope", r.Policy.Deletion.Scope)
-	return r.Run(ctx, r.Policy)
+	for _, p := range r.Policies {
+		r.Log.Info("reconcile once", "policy", p.Name, "dryRun", p.DryRun, "scope", p.Deletion.Scope)
+		if err := r.Run(ctx, p); err != nil {
+			return err
+		}
+	}
+	return nil
 }

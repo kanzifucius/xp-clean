@@ -7,7 +7,7 @@ const (
 	Success = 0
 	Runtime = 1
 	Usage   = 2
-	// Blocked is reserved for a future --fail-on-blocked mode (default stays Success).
+	// Blocked is returned when --fail-on-blocked is set and the run completed with blocked plans.
 	Blocked = 3
 )
 
@@ -40,6 +40,14 @@ func RuntimeErr(err error) error {
 		return nil
 	}
 	return &Code{Err: err, Code: Runtime}
+}
+
+// BlockedErr marks a completed run that had blocked plans (exit 3).
+func BlockedErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &Code{Err: err, Code: Blocked}
 }
 
 // Status extracts an exit code from err (default Runtime).

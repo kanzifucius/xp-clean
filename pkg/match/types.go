@@ -11,8 +11,8 @@ type Selectors struct {
 }
 
 // GlobPatterns match string fields used during discovery and eligibility.
-// Patterns use filepath.Match semantics: * does not cross '/' ;
-// for GVK strings use "group/version" or "group/*".
+// Patterns use filepath.Match semantics: * does not cross '/' .
+// First-cut GVK globs are "group/version" (kind not required), e.g. "group/*".
 type GlobPatterns struct {
 	Namespaces []string `json:"namespaces,omitempty" yaml:"namespaces,omitempty"`
 	XRDNames   []string `json:"xrdNames,omitempty" yaml:"xrdNames,omitempty"`

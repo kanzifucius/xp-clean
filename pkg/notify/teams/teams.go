@@ -108,7 +108,7 @@ func (s *Sink) postOnce(ctx context.Context, client *http.Client, body []byte) (
 	if err != nil {
 		return 0, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 4096))
 	return res.StatusCode, nil
 }

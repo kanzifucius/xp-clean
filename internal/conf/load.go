@@ -14,14 +14,14 @@ import (
 // Policy is the MVP configuration surface (file or ConfigMap data).
 // Mirrors CleanupPolicy.spec from the architecture plan.
 type Policy struct {
-	Name          string               `json:"name" yaml:"name"`
-	Schedule      string               `json:"schedule" yaml:"schedule"`
-	DryRun        *bool                `json:"dryRun" yaml:"dryRun"`
-	Timezone      string               `json:"timezone" yaml:"timezone"`
-	Selectors     match.Selectors      `json:"selectors" yaml:"selectors"`
-	TTL           TTLFile              `json:"ttl" yaml:"ttl"`
-	Deletion      DeletionFile         `json:"deletion" yaml:"deletion"`
-	Observability ObservabilityFile    `json:"observability" yaml:"observability"`
+	Name          string            `json:"name" yaml:"name"`
+	Schedule      string            `json:"schedule" yaml:"schedule"`
+	DryRun        *bool             `json:"dryRun" yaml:"dryRun"`
+	Timezone      string            `json:"timezone" yaml:"timezone"`
+	Selectors     match.Selectors   `json:"selectors" yaml:"selectors"`
+	TTL           TTLFile           `json:"ttl" yaml:"ttl"`
+	Deletion      DeletionFile      `json:"deletion" yaml:"deletion"`
+	Observability ObservabilityFile `json:"observability" yaml:"observability"`
 }
 
 // TTLFile is YAML-friendly TTL config with duration strings.
@@ -42,11 +42,11 @@ type DeletionFile struct {
 	WaitTimeout      string `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
-// ObservabilityFile holds audit/metrics stubs and notification config.
+// ObservabilityFile holds logging verbosity and optional chat notifications.
+// Audit retention sinks (ConfigMap / object storage) are deferred — stdout JSON only for now.
 type ObservabilityFile struct {
-	AuditConfigMapNamespace string            `json:"auditConfigMapNamespace" yaml:"auditConfigMapNamespace"`
-	Verbosity               string            `json:"verbosity" yaml:"verbosity"`
-	Notifications           NotificationsFile `json:"notifications" yaml:"notifications"`
+	Verbosity     string            `json:"verbosity" yaml:"verbosity"`
+	Notifications NotificationsFile `json:"notifications" yaml:"notifications"`
 }
 
 // NotificationsFile is the non-secret chat notification block under observability.

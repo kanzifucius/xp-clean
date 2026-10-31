@@ -27,28 +27,20 @@ func newManagerCommand(g *options.Global) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "manager",
 		Short: "Run the scheduled cleanup manager (stub schedule until controller-runtime)",
-		Long: `Manager loads a CleanupPolicy file and runs the shared cleanup.Runner on an
-interval derived from policy.schedule. Full controller-runtime (leader election,
-health probes, CR watches) is deferred; flags for those will land with the CRD.
-Each scheduled RunOnce uses the same notification hooks as run --once.`,
+		Long: `Manager loads labelled policy ConfigMaps from --policy-namespace (or an
+explicit --config file) and runs the shared cleanup.Runner on an interval
+derived from policy.schedule. Multiple ConfigMaps are supported for per-team
+policies. Each scheduled RunOnce uses the same notification hooks as run --once.
+Full controller-runtime (leader election, health probes, CR watches) is deferred;
+flags for those will land with the CRD.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)
 			}
 
-			policy, err := pf.Load(cmd.Flags(), false)
+			policies, cfg, err := loadPoliciesAndREST(cmd, g, &pf, false)
 			if err != nil {
-				return classifyConfigErr(err)
-			}
-
-			notifier, err := clinotify.Build(policy.Notifications)
-			if err != nil {
-				return classifyConfigErr(err)
-			}
-
-			cfg, err := g.RESTConfig()
-			if err != nil {
-				return exit.RuntimeErr(err)
+				return err
 			}
 			backend, err := options.LiveBackend(cfg)
 			if err != nil {
@@ -61,25 +53,30 @@ Each scheduled RunOnce uses the same notification hooks as run --once.`,
 				Out:     os.Stdout,
 			}
 			runFn := func(ctx context.Context, p conf.Resolved) error {
+				notifier, err := clinotify.Build(p.Notifications)
+				if err != nil {
+					g.Logger.Info("notify config warning", "policy", p.Name, "err", err)
+					notifier = notify.Noop{}
+				}
 				meta := notify.RunMeta{
 					Policy: p.Name,
 					DryRun: p.DryRun,
 					Scope:  string(p.Deletion.Scope),
 				}
-				_, err := notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
+				_, err = notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
 					return runner.RunOnce(ctx, clipolicy.ToPolicyView(p))
 				}, func(nerr error) {
 					g.Logger.Info("notify warning", "err", nerr)
 				})
 				return err
 			}
-			_ = &controller.CleanupPolicyReconciler{Policy: policy, Run: runFn}
-			sched := controller.NewScheduler(policy, runFn, nil)
+			_ = &controller.CleanupPolicyReconciler{Policies: policies, Run: runFn, Log: g.Logger}
+			sched := controller.NewScheduler(policies, runFn, g.Logger)
 
 			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
-			g.Logger.Info("manager starting", "version", version.Version, "schedule", policy.Schedule, "policy", policy.Name, "notify", policy.Notifications.Enabled)
+			g.Logger.Info("manager starting", "version", version.Version, "policies", len(policies))
 			if err := sched.Start(ctx); err != nil && err != context.Canceled {
 				return exit.RuntimeErr(fmt.Errorf("manager: %w", err))
 			}

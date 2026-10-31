@@ -1,11 +1,19 @@
+# Primary in-cluster policy surface for team A.
+# Install into the dedicated xp-clean namespace (Helm default).
+# Label xp-clean.io/policy=true so xp-clean discovers this ConfigMap.
+# Multiple labelled ConfigMaps may coexist for per-team multi-tenancy
+# (see configmap-team-b.yaml). Pass --config only for local/file override.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: xp-clean-policy
+  name: xp-clean-policy-team-a
   namespace: xp-clean
+  labels:
+    xp-clean.io/policy: "true"
+    xp-clean.io/team: team-a
 data:
   policy.yaml: |
-    name: test-stacks
+    name: team-a
     schedule: "0 */6 * * *"
     dryRun: true
     timezone: Europe/London
@@ -13,9 +21,11 @@ data:
       requireLabels:
         xp-clean.io/eligible: "true"
       globs:
-        namespaces: ["xp-test-*"]
+        namespaces: ["team-a-*", "xp-test-*"]
         xrdNames: ["*.dev.example.org"]
         xrNames: ["test-*"]
+        # group/version globs (kind not required)
+        gvks: ["*.dev.example.org/*"]
       namespaceDeny: ["kube-system", "crossplane-system"]
     ttl:
       respectResourceTTL: true
