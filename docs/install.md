@@ -13,9 +13,63 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-GHCR packages stay **private** (match the private repository).
+GHCR packages stay **private** by preference (even though this GitHub repository is public). Release archives on GitHub are public with the repository.
 
-## Pull a private image
+## CLI on your machine
+
+Install the latest **non-prerelease** binary into `~/.local/bin` (created if missing; the script never runs `sudo` for you):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
+```
+
+### Pin a version
+
+```bash
+XP_CLEAN_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
+# or:
+curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash -s -- --version v0.1.0
+```
+
+### Download, inspect, then run
+
+Piping to bash is a convenience for trusted environments. For a cautious path:
+
+```bash
+curl -fsSL -o install.sh https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh
+less install.sh
+bash install.sh
+```
+
+### Options
+
+| Mechanism | Purpose |
+|-----------|---------|
+| `XP_CLEAN_VERSION` / `--version` | Pin tag (`v0.1.0`); omit for latest non-prerelease |
+| `XP_CLEAN_INSTALL_DIR` / `--install-dir` / `BINDIR` | Override install directory (default `~/.local/bin`) |
+| `GITHUB_TOKEN` / `GH_TOKEN` | Optional — API rate limits, GHES, or a private fork |
+
+The installer downloads the platform archive and `checksums.txt` from the same release, verifies SHA-256 strictly, and installs only the `xp-clean` binary.
+
+Supported platforms match GoReleaser archives: Linux/Darwin × `x86_64` / `arm64`.
+
+### PATH
+
+If `~/.local/bin` is not on your `PATH`, the script prints a hint. Add it yourself (the installer does not rewrite shell rc files):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### CI tip
+
+For reproducible pipelines, prefer a **pinned** tag or `gh release download` of a specific archive over an unpinned pipe-to-bash.
+
+### Manual download
+
+Browse [GitHub Releases](https://github.com/kanzifucius/xp-clean/releases), download the matching `xp-clean_<version>_<Os>_<Arch>.tar.gz` and `checksums.txt`, verify the checksum, extract, and place `xp-clean` on your `PATH`.
+
+## Run in-cluster (private GHCR)
 
 ```bash
 # PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
@@ -24,6 +78,8 @@ docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
 ```
 
 In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `ghcr.io/kanzifucius/xp-clean`.
+
+Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1.0`) so operators can correlate laptop and cluster versions.
 
 ## Cut a release (maintainers)
 
