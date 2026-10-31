@@ -1,19 +1,23 @@
 # Architecture
 
-The locked architecture plan for Xp-clean lives in the project store:
+Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery and cleanup of Crossplane **v2-native** composition trees.
 
-- Cursor Project: `docs/xp-clean-architecture-plan.md`
+## MVP implemented in this repository
 
-This repository implements the MVP product slice plus locked CLI / policy decisions:
-
-- Dynamic XRD discovery + instance trace build (**no claims** / LegacyCluster claim paths)
-- Eligibility via **labels and/or globs** + TTL (`pkg/match`); GVK globs are **`group/version`**
-- `deletion.scope` with default **`instances-only`**; skip paused resources by default
-- Boolean planner `--dry-run`; `--fail-on-blocked` → exit **3**
-- **ConfigMaps** as primary in-cluster policy (multi-tenant / per-team in the dedicated **`xp-clean`** namespace); explicit **`--config`** file override only (no implicit sample path)
-- zap/logr end-to-end; stdout audit JSON only (no audit retention sink)
+- Dynamic XRD discovery + instance trace build (**no claims**)
+- Eligibility via labels and/or globs + TTL (`pkg/match`); GVK globs are `group/version`
+- `deletion.scope` with default `instances-only`
+- Boolean dry-run planner + optional deletes; skip paused by default
+- File / labelled ConfigMap policy (multi-tenant); explicit `--config` for file override
 - Cobra CLI: `run` / `plan` / `trace` / `manager` / `version` / `completion`
-- `-n` / `--namespace` rejected on `run`/`plan`; valid on `trace` only
 - Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`
+- Optional Teams Workflows notification hooks around `RunOnce`
+- GoReleaser + private GHCR on SemVer tags; CI with golangci-lint
 
-Deferred (separate work): CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart packaging, RBAC generator, GoReleaser/GHCR, Teams/Slack notify, kubectl plugin alias / `kubectl-xpclean` docs.
+## Deferred
+
+CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.
+
+## Design plans
+
+Longer design notes are maintained alongside the Cursor project for this repository (architecture, release plumbing, notification hooks). Product behaviour summarised in these docs should match those locked decisions; when in doubt, prefer the samples under `config/samples/` and the CLI help text in the current release.

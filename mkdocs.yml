@@ -1,0 +1,89 @@
+# Xp-clean documentation site (Material for MkDocs + mike versioning).
+site_name: Xp-clean
+site_description: Scheduled discovery and cleanup of Crossplane composition trees.
+site_url: https://kanzifucius.github.io/xp-clean/
+site_author: Xp-clean maintainers
+repo_url: https://github.com/kanzifucius/xp-clean
+repo_name: kanzifucius/xp-clean
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; Xp-clean contributors
+
+# Trailing slash required for mike version switching (Material docs).
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+    - search.share
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  # Re-declared because other plugins are listed; Material search is client-side (lunr).
+  - search:
+      lang: en
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+  - mike:
+      # Symlink aliases (latest → 0.1.0); falls back to copy on platforms without symlink support.
+      alias_type: symlink
+      canonical_version: latest
+      version_selector: true
+
+extra:
+  version:
+    provider: mike
+    default: latest
+    alias: true
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kanzifucius/xp-clean
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - CLI: cli.md
+  - ConfigMap policy: configmap-policy.md
+  - Eligibility and cleanup: eligibility-cleanup.md
+  - Notifications (Teams): notifications.md
+  - Install and releases: install.md
+  - Architecture: architecture.md
+  - Contributing: contributing.md

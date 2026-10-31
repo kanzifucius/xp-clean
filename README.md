@@ -1,8 +1,15 @@
 # xp-clean
 
+[![CI](https://github.com/kanzifucius/xp-clean/actions/workflows/ci.yml/badge.svg)](https://github.com/kanzifucius/xp-clean/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-teal)](https://kanzifucius.github.io/xp-clean/)
+[![GitHub release](https://img.shields.io/github/v/release/kanzifucius/xp-clean?include_prereleases&sort=semver)](https://github.com/kanzifucius/xp-clean/releases)
+[![Go version](https://img.shields.io/github/go-mod/go-version/kanzifucius/xp-clean)](https://github.com/kanzifucius/xp-clean/blob/main/go.mod)
+
 Scheduled discovery and cleanup of Crossplane composition trees (test GVKs and leftover instances).
 
 Xp-clean targets **Crossplane v2-native** stacks only (**Namespaced** / modern **Cluster** XRs). **LegacyCluster claims are not supported** — there is no claim discovery or deletion path.
+
+**Documentation:** [https://kanzifucius.github.io/xp-clean/](https://kanzifucius.github.io/xp-clean/) (Material for MkDocs + mike; enable Pages from the `gh-pages` branch in repository settings after the docs workflow has published).
 
 ## Features (MVP)
 
