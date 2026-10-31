@@ -36,6 +36,32 @@ Tagged SemVer releases (`v*`) publish:
 1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
 2. **Private GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
 
+There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + golangci-lint only.
+
+### CLI on your machine (public one-liner)
+
+Install the latest **non-prerelease** archive into `~/.local/bin` (created if missing; no silent `sudo`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
+```
+
+Pin a tag, or review the script before running:
+
+```bash
+XP_CLEAN_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash
+# or:
+curl -fsSL https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh | bash -s -- --version v0.1.0
+
+curl -fsSL -o install.sh https://raw.githubusercontent.com/kanzifucius/xp-clean/main/scripts/install.sh
+less install.sh   # review
+bash install.sh
+```
+
+The installer verifies SHA-256 against the release `checksums.txt`. Optional `GITHUB_TOKEN` / `GH_TOKEN` helps with API rate limits or private forks — not required for the public happy path. Prefer a pinned archive (or `gh release download`) in CI for reproducibility. See [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/) for PATH notes and GHCR.
+
+### Run in-cluster (private GHCR)
+
 Image tags:
 
 | Tag | Meaning |
@@ -43,10 +69,6 @@ Image tags:
 | `:vX.Y.Z` | Immutable pin (prefer this in clusters) |
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
-
-There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + golangci-lint only.
-
-### Pull a private image
 
 The GHCR package stays **private** by preference (even though this GitHub repository is public). Authenticate, then pull:
 
