@@ -5,15 +5,7 @@
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://kanzifucius.github.io/xp-clean/latest/architecture/</loc>
-         <lastmod>2026-10-31</lastmod>
-    </url>
-    <url>
          <loc>https://kanzifucius.github.io/xp-clean/latest/cli/</loc>
-         <lastmod>2026-10-31</lastmod>
-    </url>
-    <url>
-         <loc>https://kanzifucius.github.io/xp-clean/latest/configmap-policy/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
@@ -21,15 +13,7 @@
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://kanzifucius.github.io/xp-clean/latest/eligibility-cleanup/</loc>
-         <lastmod>2026-10-31</lastmod>
-    </url>
-    <url>
          <loc>https://kanzifucius.github.io/xp-clean/latest/install/</loc>
-         <lastmod>2026-10-31</lastmod>
-    </url>
-    <url>
-         <loc>https://kanzifucius.github.io/xp-clean/latest/notifications/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
@@ -37,7 +21,39 @@
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://kanzifucius.github.io/xp-clean/latest/diagrams/</loc>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/architecture/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/architecture/runtime/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/architecture/sequence/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/architecture/workflow/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/concepts/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/concepts/policy/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/operations/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/operations/cleanup/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://kanzifucius.github.io/xp-clean/latest/operations/notifications/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>
