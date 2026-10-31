@@ -1,0 +1,9 @@
+# Default owner for all paths
+* @kanzifucius
+
+# Critical paths (explicit for clarity)
+.github/ @kanzifucius
+cmd/ @kanzifucius
+pkg/ @kanzifucius
+docs/ @kanzifucius
+internal/ @kanzifucius
