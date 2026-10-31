@@ -83,7 +83,7 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 	if w == nil {
 		w = os.Stderr
 	}
-_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
+	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
 		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
 	for _, tr := range result.Traces {
 		_, _ = fmt.Fprint(w, trace.RenderText(tr))

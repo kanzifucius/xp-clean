@@ -36,7 +36,8 @@ Use --name namespace/name, or a bare name with --namespace / -n.`,
 			if ns == "" {
 				ns = g.Kube.Namespace
 			}
-			// Namespaced XRs need a namespace; leave empty for cluster-scoped attempts.
+			// Namespace may remain empty for cluster-scoped XRs; discovery-backed
+			// scope checks can tighten this later.
 
 			cfg, err := g.RESTConfig()
 			if err != nil {

@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: xp-clean
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: xp-clean
+    main: ./cmd/xp-clean
+    binary: xp-clean
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/kanzifucius/xp-clean/internal/version.Version={{.Version}}
+      - -X github.com/kanzifucius/xp-clean/internal/version.GitCommit={{.Commit}}
+      - -X github.com/kanzifucius/xp-clean/internal/version.BuildDate={{.Date}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+sboms:
+  - artifacts: archive
+
+dockers_v2:
+  - ids: [xp-clean]
+    dockerfile: Dockerfile
+    images:
+      - ghcr.io/kanzifucius/xp-clean
+    tags:
+      - "{{ .Tag }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .Major }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: xp-clean
+      org.opencontainers.image.description: Crossplane composition-tree cleanup
+      org.opencontainers.image.source: https://github.com/kanzifucius/xp-clean
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+    sbom: "{{ not .IsSnapshot }}"
+
+release:
+  github:
+    owner: kanzifucius
+    name: xp-clean
+  prerelease: auto
