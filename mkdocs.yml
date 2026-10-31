@@ -86,4 +86,5 @@ nav:
   - Notifications (Teams): notifications.md
   - Install and releases: install.md
   - Architecture: architecture.md
+  - Diagrams: diagrams/README.md
   - Contributing: contributing.md
