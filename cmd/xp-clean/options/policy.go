@@ -71,13 +71,8 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 	if w == nil {
 		w = os.Stderr
 	}
-<<<<<<< HEAD
-	fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
-		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
-=======
 	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
-		policy.Name, policy.DryRun, policy.Deletion.Scope, len(result.Traces), len(result.Plans))
->>>>>>> e2bbad2 (Add GoReleaser, private GHCR, and CI release plumbing)
+		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
 	for _, tr := range result.Traces {
 		_, _ = fmt.Fprint(w, trace.RenderText(tr))
 	}
