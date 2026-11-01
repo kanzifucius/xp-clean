@@ -66,8 +66,8 @@ Image tags:
 
 | Tag | Meaning |
 |-----|---------|
-| `:vX.Y.Z` | Immutable pin (prefer this in clusters) |
-| `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
+| `:vX.Y.Z` / `:vX.Y.Z-rc.N` | Immutable pin (prefer this in clusters; RCs publish **only** this tag) |
+| `:X.Y` / `:X` | Floating minor / major — moved only on **non-prerelease** cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
 The GHCR package stays **private** by preference (even though this GitHub repository is public). Authenticate, then pull:
