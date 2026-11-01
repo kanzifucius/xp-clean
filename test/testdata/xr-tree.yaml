@@ -1,5 +1,6 @@
 # Sample unstructured shapes used as documentation for fixtures.
 # Unit tests build equivalent objects in Go without a live cluster.
+# Kind e2e fixtures live under test/e2e/fixtures/ (XR → ConfigMap + Deployment).
 apiVersion: db.dev.example.org/v1alpha1
 kind: XDB
 metadata:
