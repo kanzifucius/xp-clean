@@ -5,7 +5,7 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 ## Artefacts
 
 1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
-2. **Private GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
+2. **GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
 
 | Image tag | Meaning |
 |-----------|---------|
@@ -13,7 +13,9 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-GHCR packages stay **private** by preference (even though this GitHub repository is public). Release archives on GitHub are public with the repository.
+**Visibility (current):** the published container package reports **`visibility: public`** and allows **anonymous** pulls from GHCR. Release archives on GitHub are public with the repository.
+
+**Preference (locked):** project preference is still **private GHCR**. That preference was **not** unlocked in this docs pass. GitHub’s Container registry rule is that once a package is public it **cannot** be switched back to private in Package settings — restoring private requires a human delete-and-republish (or an explicit preference unlock). See [Maintainer: GHCR visibility](#maintainer-ghcr-visibility) below.
 
 ## CLI on your machine
 
@@ -77,7 +79,19 @@ For reproducible pipelines, prefer a **pinned** tag or `gh release download` of 
 
 Browse [GitHub Releases](https://github.com/kanzifucius/xp-clean/releases), download the matching `xp-clean_<version>_<Os>_<Arch>.tar.gz` and `checksums.txt`, verify the checksum, extract, and place `xp-clean` on your `PATH`.
 
-## Run in-cluster (private GHCR)
+## Run in-cluster (GHCR)
+
+Package page: [ghcr.io/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean).
+
+Because the package is **public**, pull without registry login:
+
+```bash
+docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
+```
+
+In-cluster Deployments / CronJobs can omit `imagePullSecrets` for this image while it remains public.
+
+If the package becomes private later (or you consume a private copy), authenticate and use an `imagePullSecret` whose token can `read:packages`:
 
 ```bash
 # PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
@@ -85,9 +99,27 @@ echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
 docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
 ```
 
-In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `ghcr.io/kanzifucius/xp-clean`.
-
 Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1.0`) so operators can correlate laptop and cluster versions.
+
+## Maintainer: GHCR visibility
+
+Agents cannot change package visibility with the repository installation token (`PATCH …/packages/container/xp-clean` → **404**). Package admin is required.
+
+Exact UI path (personal-account package owner):
+
+1. Open [Package: xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean).
+2. On the right, click **Package settings**.
+3. Scroll to **Danger Zone** → **Change visibility**.
+4. GitHub documents that **once a package is public, you cannot make it private again** ([Configuring a package's access control and visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)). Expect the Private option to be unavailable for this already-public package.
+
+To honour the locked **private GHCR** preference after the package was published public, a human owner must choose one of:
+
+| Option | Action | Notes |
+|--------|--------|-------|
+| **A — Delete and republish private** | Danger Zone → **Delete this package**, then cut a new SemVer tag so GoReleaser publishes a **fresh** package (first publish defaults to private). | Destructive: digests/tags on the old package disappear; update any pinned digests. |
+| **B — Unlock preference** | Explicitly allow public GHCR in project preferences, then keep docs as they are here. | Do **not** silently change preferences — ask the coordinator / owner first. |
+
+Until A or B lands, install docs describe the **actual** public package.
 
 ## Cut a release (maintainers)
 
