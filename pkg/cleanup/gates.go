@@ -8,13 +8,13 @@ import (
 
 // DeletionConfig holds safety gates and budgets for a run.
 type DeletionConfig struct {
-	Scope            DeletionScope  `json:"scope" yaml:"scope"`
-	MaxTracesPerRun  int            `json:"maxTracesPerRun" yaml:"maxTracesPerRun"`
-	MaxDeletesPerRun int            `json:"maxDeletesPerRun" yaml:"maxDeletesPerRun"`
-	OrphanMode       string         `json:"orphanMode" yaml:"orphanMode"`
-	DeletePaused     bool           `json:"deletePaused" yaml:"deletePaused"`
-	AllowXRDDeletion bool           `json:"allowXRDDeletion" yaml:"allowXRDDeletion"`
-	WaitTimeout      string         `json:"waitTimeout" yaml:"waitTimeout"`
+	Scope            DeletionScope `json:"scope" yaml:"scope"`
+	MaxTracesPerRun  int           `json:"maxTracesPerRun" yaml:"maxTracesPerRun"`
+	MaxDeletesPerRun int           `json:"maxDeletesPerRun" yaml:"maxDeletesPerRun"`
+	OrphanMode       string        `json:"orphanMode" yaml:"orphanMode"`
+	DeletePaused     bool          `json:"deletePaused" yaml:"deletePaused"`
+	AllowXRDDeletion bool          `json:"allowXRDDeletion" yaml:"allowXRDDeletion"`
+	WaitTimeout      string        `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
 // DefaultDeletionConfig returns safer MVP defaults.
