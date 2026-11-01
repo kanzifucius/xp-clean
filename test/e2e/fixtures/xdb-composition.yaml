@@ -1,0 +1,16 @@
+# Documentary Composition for the XR→ConfigMap/Deployment shape.
+# Kind e2e seeds composed children in instances-*.yaml and does not require
+# this object (or composition functions) to pass.
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xdb-comp
+  labels:
+    xp-clean.io/eligible: "true"
+spec:
+  compositeTypeRef:
+    apiVersion: db.dev.example.org/v1alpha1
+    kind: XDB
+  # Empty pipeline keeps the object valid without installing functions.
+  mode: Pipeline
+  pipeline: []
