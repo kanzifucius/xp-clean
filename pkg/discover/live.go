@@ -83,6 +83,28 @@ func (l *LiveBackend) Delete(ctx context.Context, ref trace.ObjectRef) error {
 	return l.Dyn.Delete(ctx, gvr, ref.Namespace, ref.Name)
 }
 
+// Get implements cleanup.ObjectGetter for wait-after-delete polling.
+func (l *LiveBackend) Get(ctx context.Context, ref trace.ObjectRef) (*unstructured.Unstructured, error) {
+	if l.Fetcher == nil {
+		return nil, fmt.Errorf("live backend fetcher not configured")
+	}
+	return l.Fetcher.Get(ctx, ref)
+}
+
+// CountXRs implements cleanup.XRCounter for the zero-XR definition gate.
+func (l *LiveBackend) CountXRs(ctx context.Context, info XRDInfo) (int, error) {
+	xrs, err := ListXRs(ctx, l.Dyn, info, "")
+	if err != nil {
+		return 0, err
+	}
+	return len(xrs), nil
+}
+
+// AttachDefinitions implements cleanup.DefinitionAttacher.
+func (l *LiveBackend) AttachDefinitions(ctx context.Context, tr *trace.Trace, xrd, xr *unstructured.Unstructured) {
+	AttachDefinitions(ctx, l.Dyn, tr, xrd, xr)
+}
+
 // AttachDefinitions enriches a trace with XRD / Composition / Revision nodes
 // when deletion.scope=all planning needs them. Best-effort; warnings on failure.
 func AttachDefinitions(ctx context.Context, dyn *DynamicClient, tr *trace.Trace, xrd *unstructured.Unstructured, xr *unstructured.Unstructured) {
