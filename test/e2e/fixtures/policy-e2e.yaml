@@ -1,0 +1,28 @@
+# File policy for kind e2e (`--config`). XR-only; instances-only; dry-run default.
+name: e2e-lab
+schedule: "0 */6 * * *"
+dryRun: true
+timezone: UTC
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+  globs:
+    namespaces: ["xp-test-*"]
+    xrdNames: ["*.dev.example.org"]
+    xrNames: ["test-*", "keep-*", "paused-*"]
+    gvks: ["*.dev.example.org/*"]
+  namespaceDeny: ["kube-system", "crossplane-system"]
+ttl:
+  respectResourceTTL: false
+deletion:
+  scope: instances-only
+  maxTracesPerRun: 50
+  maxDeletesPerRun: 200
+  orphanMode: report
+  deletePaused: false
+  allowXRDDeletion: false
+  waitTimeout: 2m
+observability:
+  verbosity: normal
+  notifications:
+    enabled: false

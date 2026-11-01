@@ -29,6 +29,12 @@ make test
 make build   # writes bin/xp-clean with version ldflags (Version, GitCommit, BuildDate)
 ```
 
+Unit tests cover `pkg/discover` and an in-memory e2e pipeline under `test/e2e`. For a kind cluster (Crossplane + XR→ConfigMap/Deployment fixtures):
+
+```bash
+make e2e   # local-first; not part of the required CI job named test — see test/e2e/README.md
+```
+
 ## Install / release artefacts
 
 Tagged SemVer releases (`v*`) publish:

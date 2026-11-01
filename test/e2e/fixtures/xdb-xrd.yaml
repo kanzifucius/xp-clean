@@ -1,0 +1,28 @@
+# XR-only XRD for kind e2e. Composed ConfigMap/Deployment are seeded in
+# instances YAML so the suite does not require composition functions.
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xdbs.db.dev.example.org
+  labels:
+    xp-clean.io/eligible: "true"
+spec:
+  group: db.dev.example.org
+  scope: Namespaced
+  names:
+    kind: XDB
+    plural: xdbs
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
