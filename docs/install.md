@@ -89,6 +89,56 @@ In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `
 
 Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1.0`) so operators can correlate laptop and cluster versions.
 
+## Helm chart (in-cluster CronJob)
+
+The chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean) installs into the dedicated **`xp-clean`** namespace:
+
+- Namespace, ServiceAccount
+- ClusterRole / ClusterRoleBinding (lab-oriented broad rules from the RBAC sketch; **no claim RBAC**)
+- Role / RoleBinding for reading policy ConfigMaps in `xp-clean`
+- Sample labelled policy ConfigMap (`xp-clean.io/policy=true`)
+- **CronJob** running `xp-clean run --once` (default install path)
+- Optional `manager` Deployment (`manager.enabled`, **off by default** — interval stub only)
+
+There is **no** CleanupPolicy CRD in this chart. ConfigMaps remain the primary in-cluster policy surface.
+
+### Install from a repository checkout
+
+```bash
+kubectl create namespace xp-clean
+kubectl create secret docker-registry ghcr-xp-clean \
+  --docker-server=ghcr.io \
+  --docker-username=USERNAME \
+  --docker-password="$CR_PAT" \
+  -n xp-clean
+
+helm upgrade --install xp-clean ./deploy/helm/xp-clean \
+  --namespace xp-clean \
+  --set image.tag=v0.1.0-rc.1 \
+  --set imagePullSecrets[0].name=ghcr-xp-clean
+```
+
+Render without applying:
+
+```bash
+helm template xp-clean ./deploy/helm/xp-clean --namespace xp-clean
+```
+
+### Important values
+
+| Value | Default | Purpose |
+|-------|---------|---------|
+| `image.tag` | `v0.1.0-rc.1` | Pin the GHCR image (prefer immutable `:vX.Y.Z`) |
+| `imagePullSecrets` | `[]` | Required for private GHCR pulls |
+| `dryRun` | `true` | Passed as `--dry-run` on the CronJob / manager |
+| `cronjob.schedule` | `0 */6 * * *` | Kubernetes CronJob schedule |
+| `cronjob.enabled` | `true` | Default ops path |
+| `manager.enabled` | `false` | Optional secondary Deployment |
+| `resources` | small requests/limits | Pod resource settings |
+| `policy.create` | `true` | Install the sample policy ConfigMap |
+
+Live deletes need `dryRun: false` in **both** chart values and the policy ConfigMap document. Edit selectors on the sample policy before enabling deletes. Full reference: the chart [`README.md`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md) and [`values.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml).
+
 ## Cut a release (maintainers)
 
 1. Ensure `main` is green.

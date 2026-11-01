@@ -43,13 +43,19 @@ go run ./cmd/xp-clean trace \
 !!! tip "Live deletes"
     Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.
 
-## In-cluster sketch
+## In-cluster (Helm)
 
-1. Create the dedicated **`xp-clean`** namespace.
-2. Deploy a ServiceAccount + RBAC — see [`config/rbac/role.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml) in the repository.
-3. Apply one or more labelled policy ConfigMaps (label `xp-clean.io/policy=true`, data key `policy.yaml`). Samples: [`configmap.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap.yaml), [`configmap-team-b.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap-team-b.yaml).
-4. Run either:
-    - **Job / CronJob:** `xp-clean run --once` (loads ConfigMaps; optional `--config` override)
-    - **Deployment:** `xp-clean manager` (interval stub; controller-runtime later)
+Prefer the chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean):
 
-See [Policy and eligibility](concepts/policy.md) and [Install](install.md) for ConfigMap samples, GHCR pull, and release notes.
+```bash
+helm upgrade --install xp-clean ./deploy/helm/xp-clean \
+  --namespace xp-clean \
+  --set image.tag=v0.1.0-rc.1 \
+  --set imagePullSecrets[0].name=ghcr-xp-clean
+```
+
+That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
+
+Without Helm, apply [`config/rbac/role.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml) plus labelled ConfigMaps (`xp-clean.io/policy=true`, data key `policy.yaml`) from [`config/samples/`](https://github.com/kanzifucius/xp-clean/tree/main/config/samples).
+
+See [Policy and eligibility](concepts/policy.md) and [Install](install.md) for values, GHCR pull, and release notes.

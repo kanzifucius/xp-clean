@@ -1,0 +1,17 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "xp-clean.fullname" . }}-policy
+  namespace: {{ include "xp-clean.namespace" . }}
+  labels:
+    {{- include "xp-clean.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "xp-clean.fullname" . }}-policy
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "xp-clean.serviceAccountName" . }}
+    namespace: {{ include "xp-clean.namespace" . }}
+{{- end }}
