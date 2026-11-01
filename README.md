@@ -34,7 +34,7 @@ make build   # writes bin/xp-clean with version ldflags (Version, GitCommit, Bui
 Tagged SemVer releases (`v*`) publish:
 
 1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
-2. **GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`). The published package is currently **public** (anonymous pull works). The project preference remains private GHCR; see [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/) for the maintainer visibility note.
+2. **GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`). The package is **public** (anonymous pull); that is the locked preference.
 
 There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + golangci-lint only.
 
@@ -70,19 +70,13 @@ Image tags:
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-The container package at [`ghcr.io/kanzifucius/xp-clean`](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean) is **public** today, so cluster nodes can pull without an `imagePullSecret`:
+The container package at [`ghcr.io/kanzifucius/xp-clean`](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean) is **public**, so cluster nodes can pull without an `imagePullSecret`:
 
 ```bash
 docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
 ```
 
-If the package is later made private (or you pull from a private fork), authenticate with a PAT that has `read:packages` and configure an `imagePullSecret`:
-
-```bash
-# PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
-echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
-docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
-```
+Private forks still need a PAT with `read:packages` and an `imagePullSecret` — see [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/).
 
 ### Cut a release (maintainers)
 

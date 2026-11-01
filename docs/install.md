@@ -13,9 +13,7 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-**Visibility (current):** the published container package reports **`visibility: public`** and allows **anonymous** pulls from GHCR. Release archives on GitHub are public with the repository.
-
-**Preference (locked):** project preference is still **private GHCR**. That preference was **not** unlocked in this docs pass. GitHub’s Container registry rule is that once a package is public it **cannot** be switched back to private in Package settings — restoring private requires a human delete-and-republish (or an explicit preference unlock). See [Maintainer: GHCR visibility](#maintainer-ghcr-visibility) below.
+**Visibility (locked):** `ghcr.io/kanzifucius/xp-clean` is **public** and allows **anonymous** pulls. Release archives on GitHub are public with the repository. This matches the project preference (2026-11-01): keep the package public; do **not** delete or republish as private.
 
 ## CLI on your machine
 
@@ -83,43 +81,29 @@ Browse [GitHub Releases](https://github.com/kanzifucius/xp-clean/releases), down
 
 Package page: [ghcr.io/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean).
 
-Because the package is **public**, pull without registry login:
+Pull without registry login:
 
 ```bash
 docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
 ```
 
-In-cluster Deployments / CronJobs can omit `imagePullSecrets` for this image while it remains public.
+In-cluster Deployments / CronJobs can omit `imagePullSecrets` for this image.
 
-If the package becomes private later (or you consume a private copy), authenticate and use an `imagePullSecret` whose token can `read:packages`:
+If you consume a **private fork** of the package, authenticate and use an `imagePullSecret` whose token can `read:packages`:
 
 ```bash
 # PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
 echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
-docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
+docker pull ghcr.io/NAMESPACE/xp-clean:v0.1.0
 ```
 
 Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1.0`) so operators can correlate laptop and cluster versions.
 
 ## Maintainer: GHCR visibility
 
-Agents cannot change package visibility with the repository installation token (`PATCH …/packages/container/xp-clean` → **404**). Package admin is required.
+**Locked decision (2026-11-01):** keep `ghcr.io/kanzifucius/xp-clean` **public** (anonymous pull). Do **not** delete the package or republish it as private.
 
-Exact UI path (personal-account package owner):
-
-1. Open [Package: xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean).
-2. On the right, click **Package settings**.
-3. Scroll to **Danger Zone** → **Change visibility**.
-4. GitHub documents that **once a package is public, you cannot make it private again** ([Configuring a package's access control and visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)). Expect the Private option to be unavailable for this already-public package.
-
-To honour the locked **private GHCR** preference after the package was published public, a human owner must choose one of:
-
-| Option | Action | Notes |
-|--------|--------|-------|
-| **A — Delete and republish private** | Danger Zone → **Delete this package**, then cut a new SemVer tag so GoReleaser publishes a **fresh** package (first publish defaults to private). | Destructive: digests/tags on the old package disappear; update any pinned digests. |
-| **B — Unlock preference** | Explicitly allow public GHCR in project preferences, then keep docs as they are here. | Do **not** silently change preferences — ask the coordinator / owner first. |
-
-Until A or B lands, install docs describe the **actual** public package.
+Package page: [ghcr.io/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean). GitHub’s Container registry does not allow switching an already-public package back to private in Package settings ([docs](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)); that constraint is moot under the locked public preference.
 
 ## Cut a release (maintainers)
 
