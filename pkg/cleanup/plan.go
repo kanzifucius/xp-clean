@@ -27,7 +27,16 @@ type DeletePlan struct {
 // Instance layer: delete the XR root only (children follow via ownerReferences /
 // Crossplane finalizers). Definition layer (scope=all): after instances, delete
 // CompositionRevisions → Composition → XRD (XRD only if allowXRDDeletion).
+//
+// remainingXRsAfterRun is the count of XRs for this XRD expected to remain after
+// this cleanup pass's instance deletes. When > 0, definition steps are omitted
+// (zero-XR gate). Pass 0 when unknown / single-XR dry-run fixtures.
 func BuildPlan(t trace.Trace, cfg DeletionConfig, dryRun bool) DeletePlan {
+	return BuildPlanWithRemaining(t, cfg, dryRun, 0)
+}
+
+// BuildPlanWithRemaining is BuildPlan with an explicit zero-XR remaining count.
+func BuildPlanWithRemaining(t trace.Trace, cfg DeletionConfig, dryRun bool, remainingXRsAfterRun int) DeletePlan {
 	plan := DeletePlan{
 		TraceID: t.ID,
 		DryRun:  dryRun,
@@ -54,6 +63,12 @@ func BuildPlan(t trace.Trace, cfg DeletionConfig, dryRun bool) DeletePlan {
 	})
 
 	if cfg.Scope != ScopeAll {
+		return plan
+	}
+
+	if remainingXRsAfterRun > 0 {
+		// Omit definition steps so instance deletes still run; do not mark the
+		// whole plan blocked (operators with --fail-on-blocked still clean XRs).
 		return plan
 	}
 

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kanzifucius/xp-clean/pkg/crossplane"
 	"github.com/kanzifucius/xp-clean/pkg/match"
 	"github.com/kanzifucius/xp-clean/pkg/trace"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -31,12 +33,13 @@ func ObjectKey(group, version, kind, ns, name string) string {
 	return group + "/" + version + "/" + kind + "/" + ns + "/" + name
 }
 
-// Get implements trace.ObjectFetcher.
+// Get implements trace.ObjectFetcher and cleanup.ObjectGetter.
 func (m *MemoryBackend) Get(_ context.Context, ref trace.ObjectRef) (*unstructured.Unstructured, error) {
 	k := ObjectKey(ref.Group, ref.Version, ref.Kind, ref.Namespace, ref.Name)
 	u, ok := m.Objects[k]
 	if !ok {
-		return nil, fmt.Errorf("not found: %s", k)
+		gr := schema.GroupResource{Group: ref.Group, Resource: ref.Kind}
+		return nil, apierrors.NewNotFound(gr, ref.Name)
 	}
 	return u.DeepCopy(), nil
 }
@@ -68,10 +71,92 @@ func (m *MemoryBackend) BuildTrace(ctx context.Context, root *unstructured.Unstr
 func (m *MemoryBackend) Delete(_ context.Context, ref trace.ObjectRef) error {
 	k := ObjectKey(ref.Group, ref.Version, ref.Kind, ref.Namespace, ref.Name)
 	if _, ok := m.Objects[k]; !ok {
-		return fmt.Errorf("not found: %s", k)
+		gr := schema.GroupResource{Group: ref.Group, Resource: ref.Kind}
+		return apierrors.NewNotFound(gr, ref.Name)
 	}
 	delete(m.Objects, k)
 	return nil
+}
+
+// CountXRs implements cleanup.XRCounter.
+func (m *MemoryBackend) CountXRs(_ context.Context, info XRDInfo) (int, error) {
+	if info.XRGVK.Empty() {
+		return 0, fmt.Errorf("XRD info missing XR GVK")
+	}
+	n := 0
+	for _, u := range m.Objects {
+		gvk := u.GroupVersionKind()
+		if gvk.Group == info.XRGVK.Group && gvk.Version == info.XRGVK.Version && gvk.Kind == info.XRGVK.Kind {
+			n++
+		}
+	}
+	return n, nil
+}
+
+// AttachDefinitions implements cleanup.DefinitionAttacher using the in-memory map.
+func (m *MemoryBackend) AttachDefinitions(ctx context.Context, tr *trace.Trace, xrd, xr *unstructured.Unstructured) {
+	if tr == nil {
+		return
+	}
+	if xrd != nil {
+		ref := trace.RefFromUnstructured(xrd)
+		if !hasNode(*tr, ref) {
+			tr.Nodes = append(tr.Nodes, trace.Node{Ref: ref, Kind: trace.NodeXRD, Labels: xrd.GetLabels(), Eligible: true})
+			tr.Edges = append(tr.Edges, trace.Edge{From: ref, To: tr.Root, Reason: "xrdMatch"})
+		}
+	}
+	if xr == nil {
+		return
+	}
+	compName := crossplane.CompositionRefName(xr)
+	if compName == "" {
+		return
+	}
+	compRef := trace.ObjectRef{
+		Group:   crossplane.XRDGroup,
+		Version: "v1",
+		Kind:    "Composition",
+		Name:    compName,
+	}
+	comp, err := m.Get(ctx, compRef)
+	if err != nil {
+		tr.Warnings = append(tr.Warnings, fmt.Sprintf("composition %s: %v", compName, err))
+		return
+	}
+	compRef = trace.RefFromUnstructured(comp)
+	if !hasNode(*tr, compRef) {
+		tr.Nodes = append(tr.Nodes, trace.Node{Ref: compRef, Kind: trace.NodeComposition, Labels: comp.GetLabels(), Eligible: true})
+		if xrd != nil {
+			tr.Edges = append(tr.Edges, trace.Edge{From: trace.RefFromUnstructured(xrd), To: compRef, Reason: "compositeTypeRef"})
+		}
+		tr.Edges = append(tr.Edges, trace.Edge{From: compRef, To: tr.Root, Reason: "compositionRef"})
+	}
+
+	revGK := schema.GroupKind{Group: crossplane.XRDGroup, Kind: "CompositionRevision"}
+	for _, u := range m.Objects {
+		if u.GroupVersionKind().GroupKind() != revGK {
+			continue
+		}
+		labels := u.GetLabels()
+		if labels[crossplane.LabelCompositionName] != compName {
+			continue
+		}
+		revRef := trace.RefFromUnstructured(u)
+		if hasNode(*tr, revRef) {
+			continue
+		}
+		tr.Nodes = append(tr.Nodes, trace.Node{Ref: revRef, Kind: trace.NodeCompositionRevision, Labels: labels, Eligible: true})
+		tr.Edges = append(tr.Edges, trace.Edge{From: compRef, To: revRef, Reason: "compositionRevision"})
+	}
+}
+
+func hasNode(tr trace.Trace, ref trace.ObjectRef) bool {
+	for _, n := range tr.Nodes {
+		if n.Ref.Key() == ref.Key() {
+			return true
+		}
+	}
+	return false
 }
 
 // Seed stores objects for later Get/Delete.

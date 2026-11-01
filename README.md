@@ -209,7 +209,8 @@ Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Pr
 ## Safety notes
 
 - Default scope deletes **instances only**.
-- With `scope: all`, order is CompositionRevision → Composition → XRD; XRD also needs `allowXRDDeletion: true`.
+- Live deletes honour `deletion.waitTimeout`: after each delete Xp-clean polls until the object is gone (or times out). Stuck finalizers are audited; Crossplane finalizers are **never** stripped.
+- With `scope: all`, traces attach CompositionRevision → Composition → XRD; delete order matches that stack. Definition deletes require **zero remaining XRs** for the XRD, and XRD also needs `allowXRDDeletion: true`.
 - `xp-clean.io/keep=true` skips the whole trace; paused resources are skipped unless `deletePaused: true`.
 - Namespace alone never implies eligibility — use policy labels and/or globs.
 - Eligibility never comes from `-n` on `run`/`plan`.
