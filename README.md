@@ -34,7 +34,7 @@ make build   # writes bin/xp-clean with version ldflags (Version, GitCommit, Bui
 Tagged SemVer releases (`v*`) publish:
 
 1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
-2. **Private GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
+2. **GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`). The package is **public** (anonymous pull); that is the locked preference.
 
 There is **no** snapshot publish from `main`. CI on PRs and `main` runs tests + golangci-lint only.
 
@@ -60,7 +60,7 @@ bash install.sh
 
 The installer verifies SHA-256 against the release `checksums.txt`. Optional `GITHUB_TOKEN` / `GH_TOKEN` helps with API rate limits or private forks — not required for the public happy path. Prefer a pinned archive (or `gh release download`) in CI for reproducibility. See [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/) for PATH notes and GHCR.
 
-### Run in-cluster (private GHCR)
+### Run in-cluster (GHCR)
 
 Image tags:
 
@@ -70,15 +70,13 @@ Image tags:
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-The GHCR package stays **private** by preference (even though this GitHub repository is public). Authenticate, then pull:
+The container package at [`ghcr.io/kanzifucius/xp-clean`](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean) is **public**, so cluster nodes can pull without an `imagePullSecret`:
 
 ```bash
-# PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
-echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
-docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
+docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
 ```
 
-In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `ghcr.io/kanzifucius/xp-clean`.
+Private forks still need a PAT with `read:packages` and an `imagePullSecret` — see [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/).
 
 ### Cut a release (maintainers)
 

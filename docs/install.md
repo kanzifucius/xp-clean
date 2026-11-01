@@ -5,7 +5,7 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 ## Artefacts
 
 1. **GitHub Release archives** — `linux` and `darwin` (`amd64` / `arm64`) plus `checksums.txt` (and archive SBOMs when Syft is available on the runner).
-2. **Private GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
+2. **GHCR image** — `ghcr.io/kanzifucius/xp-clean` (linux `amd64` / `arm64`).
 
 | Image tag | Meaning |
 |-----------|---------|
@@ -13,7 +13,7 @@ Tagged SemVer releases (`v*`) publish release artefacts. There is **no** snapsho
 | `:X.Y` / `:X` | Floating minor / major on non-prerelease cuts |
 | `:latest` | Moved only on **non-prerelease** releases (RCs such as `v0.2.0-rc.1` do not move it) |
 
-GHCR packages stay **private** by preference (even though this GitHub repository is public). Release archives on GitHub are public with the repository.
+**Visibility (locked):** `ghcr.io/kanzifucius/xp-clean` is **public** and allows **anonymous** pulls. Release archives on GitHub are public with the repository. This matches the project preference (2026-11-01): keep the package public; do **not** delete or republish as private.
 
 ## CLI on your machine
 
@@ -77,17 +77,33 @@ For reproducible pipelines, prefer a **pinned** tag or `gh release download` of 
 
 Browse [GitHub Releases](https://github.com/kanzifucius/xp-clean/releases), download the matching `xp-clean_<version>_<Os>_<Arch>.tar.gz` and `checksums.txt`, verify the checksum, extract, and place `xp-clean` on your `PATH`.
 
-## Run in-cluster (private GHCR)
+## Run in-cluster (GHCR)
+
+Package page: [ghcr.io/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean).
+
+Pull without registry login:
+
+```bash
+docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
+```
+
+In-cluster Deployments / CronJobs can omit `imagePullSecrets` for this image.
+
+If you consume a **private fork** of the package, authenticate and use an `imagePullSecret` whose token can `read:packages`:
 
 ```bash
 # PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)
 echo "$CR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
-docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0
+docker pull ghcr.io/NAMESPACE/xp-clean:v0.1.0
 ```
 
-In-cluster pulls need an `imagePullSecret` whose token can `read:packages` for `ghcr.io/kanzifucius/xp-clean`.
-
 Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1.0`) so operators can correlate laptop and cluster versions.
+
+## Maintainer: GHCR visibility
+
+**Locked decision (2026-11-01):** keep `ghcr.io/kanzifucius/xp-clean` **public** (anonymous pull). Do **not** delete the package or republish it as private.
+
+Package page: [ghcr.io/kanzifucius/xp-clean](https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean). GitHub’s Container registry does not allow switching an already-public package back to private in Package settings ([docs](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)); that constraint is moot under the locked public preference.
 
 ## Cut a release (maintainers)
 

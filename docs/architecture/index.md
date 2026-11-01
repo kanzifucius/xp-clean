@@ -12,7 +12,7 @@ Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery 
 - Cobra CLI: `run` / `plan` / `trace` / `manager` / `version` / `completion`
 - Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`
 - Optional Teams Workflows notification hooks around `RunOnce`
-- GoReleaser + private GHCR on SemVer tags; CI with golangci-lint
+- GoReleaser + **public** GHCR on SemVer tags (anonymous pull; see [Install](../install.md#maintainer-ghcr-visibility)); CI with golangci-lint
 
 ## Deferred
 
