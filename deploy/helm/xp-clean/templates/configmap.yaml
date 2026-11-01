@@ -1,0 +1,13 @@
+{{- if .Values.policy.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.policy.name }}
+  namespace: {{ include "xp-clean.namespace" . }}
+  labels:
+    {{- include "xp-clean.labels" . | nindent 4 }}
+    xp-clean.io/policy: "true"
+data:
+  policy.yaml: |
+    {{- .Values.policy.document | nindent 4 }}
+{{- end }}

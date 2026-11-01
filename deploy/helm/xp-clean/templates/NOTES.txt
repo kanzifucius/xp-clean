@@ -1,0 +1,19 @@
+xp-clean installed into namespace {{ include "xp-clean.namespace" . }}.
+
+Default path: CronJob running `xp-clean run --once` (dryRun={{ .Values.dryRun }}).
+{{- if .Values.manager.enabled }}
+
+Manager Deployment is enabled (secondary / interval stub). Prefer CronJob for ops familiarity.
+{{- else }}
+
+Manager Deployment is off (manager.enabled=false). Enable only if you need the long-running stub.
+{{- end }}
+
+Image: {{ include "xp-clean.image" . }}
+{{- if not .Values.imagePullSecrets }}
+
+Warning: imagePullSecrets is empty. Private GHCR pulls need a secret with read:packages.
+{{- end }}
+
+Edit the sample policy ConfigMap selectors before enabling live deletes
+(set dryRun=false in values AND in the policy document).

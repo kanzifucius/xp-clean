@@ -1,0 +1,24 @@
+{{- if .Values.rbac.create }}
+# Lab-oriented broad RBAC (matches config/rbac/role.yaml sketch). No claim verbs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "xp-clean.fullname" . }}
+  labels:
+    {{- include "xp-clean.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apiextensions.crossplane.io"]
+    resources: ["compositeresourcedefinitions", "compositions", "compositionrevisions"]
+    verbs: ["get", "list", "watch"]
+  # Definition deletes only when deletion.scope=all and gates pass.
+  - apiGroups: ["apiextensions.crossplane.io"]
+    resources: ["compositeresourcedefinitions", "compositions", "compositionrevisions"]
+    verbs: ["delete"]
+  # Broad instance access for MVP labs — replace with generated per-GVK rules later.
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update"]
+{{- end }}
