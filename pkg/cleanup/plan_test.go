@@ -117,7 +117,7 @@ func TestDryRunExecuteDoesNotDelete(t *testing.T) {
 	tr := sampleTrace()
 	plan := cleanup.BuildPlan(tr, cleanup.DefaultDeletionConfig(), true)
 	del := &countingDeleter{}
-	res := cleanup.Execute(context.Background(), plan, "test-stacks", del)
+	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{})
 	if del.n != 0 {
 		t.Fatalf("dry-run deleted %d objects", del.n)
 	}
@@ -133,12 +133,26 @@ func TestExecuteDeletesWhenNotDryRun(t *testing.T) {
 	tr := sampleTrace()
 	plan := cleanup.BuildPlan(tr, cleanup.DefaultDeletionConfig(), false)
 	del := &countingDeleter{}
-	res := cleanup.Execute(context.Background(), plan, "test-stacks", del)
+	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{})
 	if del.n != 1 {
 		t.Fatalf("want 1 delete, got %d", del.n)
 	}
 	if res.Deleted != 1 {
 		t.Fatalf("unexpected %#v", res)
+	}
+}
+
+func TestBuildPlanScopeAllBlocksDefinitionsWhenXRsRemain(t *testing.T) {
+	tr := sampleTrace()
+	cfg := cleanup.DefaultDeletionConfig()
+	cfg.Scope = cleanup.ScopeAll
+	cfg.AllowXRDDeletion = true
+	plan := cleanup.BuildPlanWithRemaining(tr, cfg, true, 2)
+	if len(plan.Steps) != 1 || plan.Steps[0].Kind != trace.NodeXR {
+		t.Fatalf("want XR-only steps when XRs remain, got %#v", plan.Steps)
+	}
+	if len(plan.BlockedBy) != 0 {
+		t.Fatalf("zero-XR omission must not block the instance plan: %#v", plan.BlockedBy)
 	}
 }
 
