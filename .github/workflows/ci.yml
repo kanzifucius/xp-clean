@@ -33,3 +33,23 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
+
+  helm:
+    name: helm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Lint chart
+        run: make helm-lint
+
+      - name: Template chart
+        run: make helm-template
+
+      - name: Package chart (smoke, no push)
+        run: HELM_VERSION=v0.0.0-ci make helm-package

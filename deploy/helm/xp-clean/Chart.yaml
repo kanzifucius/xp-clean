@@ -2,8 +2,10 @@ apiVersion: v2
 name: xp-clean
 description: Minimal Helm chart for xp-clean — CronJob scheduled cleanup into the dedicated xp-clean namespace.
 type: application
-version: 0.1.0
-appVersion: "0.1.0-rc.1"
+# Chart SemVer (no leading v). Release packaging rewrites this from the git tag.
+version: 0.1.0-rc.1
+# Prefer full git tag (with v) so it matches published GHCR image tags.
+appVersion: "v0.1.0-rc.1"
 home: https://github.com/kanzifucius/xp-clean
 sources:
   - https://github.com/kanzifucius/xp-clean

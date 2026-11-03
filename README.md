@@ -95,7 +95,7 @@ git tag -a v0.1.0 -m "v0.1.0"
 git push origin v0.1.0
 ```
 
-3. Watch the `release` workflow; confirm the GitHub Release assets and `docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0`.
+3. Watch the `release` workflow; confirm the GitHub Release assets, `docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0`, and `helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0`.
 4. Spot-check `xp-clean version -o json` from the archive or image (`0.1.0`, matching the tag without the leading `v`).
 
 Local smoke (no push): `goreleaser release --snapshot --clean`.
@@ -203,16 +203,18 @@ Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Pr
 
 ## In-cluster (Helm)
 
-Prefer the chart under [`deploy/helm/xp-clean`](deploy/helm/xp-clean). It installs into the dedicated **`xp-clean`** namespace with ServiceAccount, lab-oriented ClusterRole/Binding (no claim RBAC), a Role for policy ConfigMaps, a sample labelled policy ConfigMap, and a **CronJob** running `xp-clean run --once` by default. Dry-run defaults to **true**. The optional `manager` Deployment is off unless you set `manager.enabled=true`.
+Prefer the published chart on GHCR (OCI). It installs into the dedicated **`xp-clean`** namespace with ServiceAccount, lab-oriented ClusterRole/Binding (no claim RBAC), a Role for policy ConfigMaps, a sample labelled policy ConfigMap, and a **CronJob** running `xp-clean run --once` by default. Dry-run defaults to **true**. The optional `manager` Deployment is off unless you set `manager.enabled=true`.
+
+Chart `--version` is SemVer **without** a leading `v`; image tags **keep** `v`:
 
 ```bash
-helm upgrade --install xp-clean ./deploy/helm/xp-clean \
+helm upgrade --install xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 \
   --namespace xp-clean \
-  --create-namespace \
-  --set image.tag=v0.1.0-rc.1
+  --create-namespace
 ```
 
-The published GHCR package is **public**, so no `imagePullSecret` is required for the default image. `helm template xp-clean ./deploy/helm/xp-clean -n xp-clean` renders without a cluster. Hand-rolled manifests remain in [`config/rbac/role.yaml`](config/rbac/role.yaml) and [`config/samples/`](config/samples/) if you are not using Helm. See [Install](https://kanzifucius.github.io/xp-clean/latest/install/) for values (`schedule`, `dryRun`, `resources`, optional `imagePullSecrets` for private forks).
+From a checkout: `helm upgrade --install xp-clean ./deploy/helm/xp-clean -n xp-clean --create-namespace --set image.tag=v0.1.0-rc.1`. The image and chart packages are **public**, so no `imagePullSecret` is required for the defaults. Hand-rolled manifests remain in [`config/rbac/role.yaml`](config/rbac/role.yaml) and [`config/samples/`](config/samples/) if you are not using Helm. See [Install](https://kanzifucius.github.io/xp-clean/latest/install/) for values and version notes.
 
 ## Safety notes
 
