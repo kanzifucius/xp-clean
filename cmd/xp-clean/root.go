@@ -33,7 +33,7 @@ plan subcommand plans all eligible traces (not the same as scope=all).
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			if err := g.CompleteLogging(); err != nil {
+			if err := g.CompleteLogging(cmd); err != nil {
 				return exit.UsageErr(err)
 			}
 			return nil

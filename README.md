@@ -173,7 +173,7 @@ xp-clean version [-o short|json|yaml]
 xp-clean completion bash|zsh|fish|powershell
 ```
 
-Logging uses zap/logr on stderr (`--zap-devel`, `--zap-log-level`, `--zap-encoder`). Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on stdout.
+Logging uses zap/logr end-to-end, but interactive CLI commands are quiet by default (error-only on stderr). Use `-v=1` / `--log-level=info` for detail (`manager` defaults to info). Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on stdout.
 
 Exit codes: `0` success; `1` runtime failure; `2` usage/validation; `3` blocked plans with `--fail-on-blocked`.
 

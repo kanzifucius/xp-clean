@@ -40,7 +40,7 @@ func TestRootHelp(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := out.String()
-	for _, want := range []string{"run", "plan", "trace", "manager", "version", "completion"} {
+	for _, want := range []string{"run", "plan", "trace", "manager", "version", "completion", "--log-level", "-v"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("help missing %q:\n%s", want, s)
 		}

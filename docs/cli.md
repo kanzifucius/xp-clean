@@ -33,8 +33,10 @@ xp-clean completion bash|zsh|fish|powershell
 | `--notify` / `XP_CLEAN_NOTIFY` | Override `notifications.enabled` |
 | `--notify-on-dry-run` / `XP_CLEAN_NOTIFY_ON_DRY_RUN` | Override `notifications.onDryRun` |
 | `-n` / `--namespace` | Valid on **`trace` only**. Rejected on `run` / `plan` (usage / exit 2) |
+| `-v` / `--v` | Opt-in log verbosity: `0` error-only (default), `1` info, `2+` debug |
+| `--log-level` | Zap level on stderr (`debug\|info\|warn\|error`); default **`error`** for interactive CLI. Alias: `--zap-log-level` |
 
-Logging uses **zap/logr** on stderr (`--zap-devel`, `--zap-log-level`, `--zap-encoder`). Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on **stdout**.
+Logging stays on **zap/logr** end-to-end, but interactive commands (`run`, `plan`, `trace`, `version`) are **quiet by default**: only command results on stdout and real failures on stderr. Pass `-v=1` (or `--log-level=info`) to restore detail. `manager` defaults to **info**. Client-go / discovery warning noise is muted unless verbose. Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on **stdout**.
 
 ## Exit codes
 
