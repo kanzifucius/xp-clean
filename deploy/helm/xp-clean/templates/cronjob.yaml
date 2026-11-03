@@ -1,0 +1,73 @@
+{{- if .Values.cronjob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "xp-clean.fullname" . }}
+  namespace: {{ include "xp-clean.namespace" . }}
+  labels:
+    {{- include "xp-clean.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cronjob
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cronjob.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.cronjob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronjob.failedJobsHistoryLimit }}
+  {{- if .Values.cronjob.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ .Values.cronjob.startingDeadlineSeconds }}
+  {{- end }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "xp-clean.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: cronjob
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "xp-clean.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: cronjob
+        spec:
+          serviceAccountName: {{ include "xp-clean.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: xp-clean
+              image: {{ include "xp-clean.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args:
+                - run
+                - --once
+                - --policy-namespace={{ include "xp-clean.namespace" . }}
+                - --dry-run={{ .Values.dryRun }}
+                {{- with .Values.cronjob.extraArgs }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- with .Values.env }}
+              env:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                capabilities:
+                  drop:
+                    - ALL
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

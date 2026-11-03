@@ -1,0 +1,110 @@
+# Default install targets the dedicated xp-clean namespace (locked preference).
+namespace:
+  # Create a Namespace manifest. Set false when the namespace already exists
+  # and you install with --namespace xp-clean --create-namespace.
+  create: true
+  name: xp-clean
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/kanzifucius/xp-clean
+  # Pin an immutable SemVer tag in clusters (prefer :vX.Y.Z).
+  tag: "v0.1.0-rc.1"
+  pullPolicy: IfNotPresent
+
+# GHCR packages stay private by preference — supply a pull secret with read:packages.
+imagePullSecrets: []
+# - name: ghcr-xp-clean
+
+serviceAccount:
+  create: true
+  name: xp-clean
+  annotations: {}
+
+rbac:
+  create: true
+
+# Planner dry-run override passed as --dry-run on the CronJob / manager.
+# Live deletes need dryRun: false here AND in the policy ConfigMap.
+dryRun: true
+
+# CronJob is the default install path (xp-clean run --once).
+cronjob:
+  enabled: true
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 120
+  # Extra args appended after `run --once --dry-run=…`.
+  extraArgs: []
+  # - --fail-on-blocked
+
+# Optional long-running manager (interval stub). Off by default — CronJob is preferred.
+manager:
+  enabled: false
+  replicas: 1
+  extraArgs: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Sample labelled policy ConfigMap (xp-clean.io/policy=true). Edit selectors before live use.
+policy:
+  create: true
+  name: xp-clean-policy-sample
+  # Inline document under data.policy.yaml. dryRun here should stay true until you are ready.
+  document: |
+    name: sample
+    schedule: "0 */6 * * *"
+    dryRun: true
+    timezone: Europe/London
+    selectors:
+      requireLabels:
+        xp-clean.io/eligible: "true"
+      globs:
+        namespaces: ["xp-test-*"]
+        xrdNames: ["*.dev.example.org"]
+        xrNames: ["test-*"]
+        gvks: ["*.dev.example.org/*"]
+      namespaceDeny: ["kube-system", "crossplane-system"]
+    ttl:
+      respectResourceTTL: true
+      defaultTTL: 168h
+      applyDefaultTTLIfMissing: false
+    deletion:
+      scope: instances-only
+      maxTracesPerRun: 20
+      maxDeletesPerRun: 100
+      orphanMode: report
+      deletePaused: false
+      allowXRDDeletion: false
+      waitTimeout: 30m
+    observability:
+      verbosity: normal
+      notifications:
+        enabled: false
+        notifyOn: [started, finished, failed]
+        onDryRun: true
+        sinks:
+          - type: teams
+            webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL
+
+# Optional env (for example Teams webhook Secret refs). Empty by default.
+env: []
+# - name: XP_CLEAN_TEAMS_WEBHOOK_URL
+#   valueFrom:
+#     secretKeyRef:
+#       name: xp-clean-notify
+#       key: webhook-url
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

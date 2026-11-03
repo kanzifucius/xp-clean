@@ -13,10 +13,11 @@ Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery 
 - Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`
 - Optional Teams Workflows notification hooks around `RunOnce`
 - GoReleaser + private GHCR on SemVer tags; CI with golangci-lint
+- Minimal Helm chart (`deploy/helm/xp-clean`): CronJob `run --once` into namespace `xp-clean`; optional manager Deployment off by default
 
 ## Deferred
 
-CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.
+CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.
 
 ## Diagrams
 
