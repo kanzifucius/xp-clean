@@ -1258,13 +1258,13 @@
 <p>Live deletes require <code>dryRun: false</code> in the policy <strong>and</strong> <code>--dry-run=false</code>. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.</p>
 </div>
 <h2 id="in-cluster-helm">In-cluster (Helm)<a class="headerlink" href="#in-cluster-helm" title="Permanent link">&para;</a></h2>
-<p>Prefer the chart at <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--create-namespace<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1
+<p>Prefer the published OCI chart (chart <code>--version</code> omits the leading <code>v</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--create-namespace
 </code></pre></div>
-<p>That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (<code>xp-clean run --once</code>) with <strong>dry-run on by default</strong>. The optional manager Deployment stays off unless <code>manager.enabled=true</code>.</p>
+<p>From a checkout use <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a> and pin <code>--set image.tag=v0.1.0-rc.1</code>. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (<code>xp-clean run --once</code>) with <strong>dry-run on by default</strong>. The optional manager Deployment stays off unless <code>manager.enabled=true</code>.</p>
 <p>Without Helm, apply <a href="https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml"><code>config/rbac/role.yaml</code></a> plus labelled ConfigMaps (<code>xp-clean.io/policy=true</code>, data key <code>policy.yaml</code>) from <a href="https://github.com/kanzifucius/xp-clean/tree/main/config/samples"><code>config/samples/</code></a>.</p>
 <p>See <a href="../concepts/policy/">Policy and eligibility</a> and <a href="../install/">Install</a> for values, GHCR pull, and release notes.</p>
 

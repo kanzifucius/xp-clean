@@ -710,6 +710,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#install-from-ghcr-oci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install from GHCR (OCI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#install-from-a-repository-checkout" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1413,6 +1424,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#install-from-ghcr-oci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install from GHCR (OCI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#install-from-a-repository-checkout" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1587,7 +1609,7 @@
 </code></pre></div>
 <p>Use the <strong>same SemVer tag</strong> for the CLI archive and the image (for example <code>v0.1.0</code>) so operators can correlate laptop and cluster versions.</p>
 <h2 id="helm-chart-in-cluster-cronjob">Helm chart (in-cluster CronJob)<a class="headerlink" href="#helm-chart-in-cluster-cronjob" title="Permanent link">&para;</a></h2>
-<p>The chart at <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a> installs into the dedicated <strong><code>xp-clean</code></strong> namespace:</p>
+<p>The chart installs into the dedicated <strong><code>xp-clean</code></strong> namespace:</p>
 <ul>
 <li>Namespace, ServiceAccount</li>
 <li>ClusterRole / ClusterRoleBinding (lab-oriented broad rules from the RBAC sketch; <strong>no claim RBAC</strong>)</li>
@@ -1597,17 +1619,25 @@
 <li>Optional <code>manager</code> Deployment (<code>manager.enabled</code>, <strong>off by default</strong> — interval stub only)</li>
 </ul>
 <p>There is <strong>no</strong> CleanupPolicy CRD in this chart. ConfigMaps remain the primary in-cluster policy surface.</p>
+<h3 id="install-from-ghcr-oci">Install from GHCR (OCI)<a class="headerlink" href="#install-from-ghcr-oci" title="Permanent link">&para;</a></h3>
+<p>On each SemVer git tag the release workflow packages the chart and pushes it to GHCR. Chart OCI tags are SemVer <strong>without</strong> a leading <code>v</code>; the default <code>image.tag</code> inside the package <strong>keeps</strong> <code>v</code> so it matches the published app image.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>--create-namespace
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>helm<span class="w"> </span>show<span class="w"> </span>chart<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>helm<span class="w"> </span>template<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span>--namespace<span class="w"> </span>xp-clean
+</code></pre></div>
+<p>The chart package (<code>ghcr.io/kanzifucius/charts/xp-clean</code>) and the app image package are both <strong>public</strong> — no <code>helm registry login</code> or <code>imagePullSecret</code> for the happy path. After the first chart push, confirm the new GHCR package is set <strong>Public</strong> in GitHub Packages (same operational step as the image).</p>
 <h3 id="install-from-a-repository-checkout">Install from a repository checkout<a class="headerlink" href="#install-from-a-repository-checkout" title="Permanent link">&para;</a></h3>
-<p>Because the published GHCR package is <strong>public</strong>, the default install needs no pull secret:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>--create-namespace<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--create-namespace<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1
 </code></pre></div>
-<p>For a <strong>private fork</strong> image, create a docker-registry secret and pass <code>imagePullSecrets</code> (and set <code>image.repository</code> as needed).</p>
-<p>Render without applying:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>helm<span class="w"> </span>template<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span>--namespace<span class="w"> </span>xp-clean
-</code></pre></div>
+<p>For a <strong>private fork</strong> image, create a docker-registry secret and pass <code>imagePullSecrets</code> (and set <code>image.repository</code> as needed). Source chart path: <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a>.</p>
 <h3 id="important-values">Important values<a class="headerlink" href="#important-values" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1669,13 +1699,14 @@
 <li>Ensure <code>main</code> is green.</li>
 <li>Tag and push (do not create the Release in the UI):</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
 </code></pre></div>
 <ol>
-<li>Watch the <code>release</code> workflow; confirm GitHub Release assets and <code>docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0</code>.</li>
+<li>Watch the <code>release</code> workflow; confirm GitHub Release assets, <code>docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0</code>, and <code>helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0</code>.</li>
 <li>Spot-check <code>xp-clean version -o json</code> from the archive or image.</li>
+<li>On the <strong>first</strong> chart publish, set the GHCR package <code>charts/xp-clean</code> to <strong>Public</strong> (and link it to the repo) if GitHub created it private.</li>
 </ol>
 <p>The docs workflow also deploys a <strong>versioned</strong> site for that tag (see <a href="../">Home</a> for <code>latest</code> / <code>dev</code> aliases).</p>
 <p>Release notes and assets: <a href="https://github.com/kanzifucius/xp-clean/releases">GitHub Releases</a>.</p>
