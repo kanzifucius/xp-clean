@@ -1302,9 +1302,17 @@
 <td><code>-n</code> / <code>--namespace</code></td>
 <td>Valid on <strong><code>trace</code> only</strong>. Rejected on <code>run</code> / <code>plan</code> (usage / exit 2)</td>
 </tr>
+<tr>
+<td><code>-v</code> / <code>--v</code></td>
+<td>Opt-in log verbosity: <code>0</code> error-only (default), <code>1</code> info, <code>2+</code> debug</td>
+</tr>
+<tr>
+<td><code>--log-level</code></td>
+<td>Zap level on stderr (<code>debug\|info\|warn\|error</code>); default <strong><code>error</code></strong> for interactive CLI. Alias: <code>--zap-log-level</code></td>
+</tr>
 </tbody>
 </table>
-<p>Logging uses <strong>zap/logr</strong> on stderr (<code>--zap-devel</code>, <code>--zap-log-level</code>, <code>--zap-encoder</code>). Machine output (<code>plan</code>, <code>trace -o json|yaml</code>, audit JSON on <code>run</code>) stays on <strong>stdout</strong>.</p>
+<p>Logging stays on <strong>zap/logr</strong> end-to-end, but interactive commands (<code>run</code>, <code>plan</code>, <code>trace</code>, <code>version</code>) are <strong>quiet by default</strong>: only command results on stdout and real failures on stderr. Pass <code>-v=1</code> (or <code>--log-level=info</code>) to restore detail. <code>manager</code> defaults to <strong>info</strong>. Client-go / discovery warning noise is muted unless verbose. Encoder flags: <code>--zap-devel</code>, <code>--zap-encoder</code>. Machine output (<code>plan</code>, <code>trace -o json|yaml</code>, audit JSON on <code>run</code>) stays on <strong>stdout</strong>.</p>
 <h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
