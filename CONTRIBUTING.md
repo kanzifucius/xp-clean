@@ -19,6 +19,14 @@ make test
 make build
 ```
 
+Kind e2e (optional, local-first — Docker, kind, kubectl, helm):
+
+```bash
+make e2e
+```
+
+See [`test/e2e/README.md`](test/e2e/README.md). The required CI status check remains the job named **`test`**; kind e2e is not required on GitHub runners.
+
 Docs site (optional locally):
 
 ```bash

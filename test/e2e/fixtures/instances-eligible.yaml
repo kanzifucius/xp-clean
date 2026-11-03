@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: xp-test-1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-db-cm
+  namespace: xp-test-1
+  labels:
+    crossplane.io/composite: test-db
+data:
+  purpose: xp-clean-e2e
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-db-deploy
+  namespace: xp-test-1
+  labels:
+    crossplane.io/composite: test-db
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: xp-clean-e2e
+  template:
+    metadata:
+      labels:
+        app: xp-clean-e2e
+    spec:
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+---
+apiVersion: db.dev.example.org/v1alpha1
+kind: XDB
+metadata:
+  name: test-db
+  namespace: xp-test-1
+  labels:
+    xp-clean.io/eligible: "true"
+  annotations:
+    xp-clean.io/ttl: "1h"
+  # creationTimestamp is set by the API; TTL elapsed is forced via policy RespectResourceTTL=false in e2e policy.
+spec:
+  crossplane:
+    compositionRef:
+      name: xdb-comp
+    resourceRefs:
+      - apiVersion: v1
+        kind: ConfigMap
+        name: test-db-cm
+        namespace: xp-test-1
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: test-db-deploy
+        namespace: xp-test-1

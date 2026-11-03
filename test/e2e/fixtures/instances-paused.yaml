@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: xp-test-paused
+---
+apiVersion: db.dev.example.org/v1alpha1
+kind: XDB
+metadata:
+  name: paused-db
+  namespace: xp-test-paused
+  labels:
+    xp-clean.io/eligible: "true"
+  annotations:
+    crossplane.io/paused: "true"
+spec:
+  crossplane:
+    resourceRefs: []

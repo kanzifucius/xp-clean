@@ -17,6 +17,14 @@ make build
 golangci-lint run ./...   # matches CI (.golangci.yml)
 ```
 
+Kind end-to-end (optional, local-first):
+
+```bash
+make e2e
+```
+
+Requires Docker, kind, kubectl, and helm. Details: [`test/e2e/README.md`](https://github.com/kanzifucius/xp-clean/blob/main/test/e2e/README.md). CI’s required check stays the job named **`test`**; kind e2e is not required on GitHub runners.
+
 ## Documentation site
 
 ```bash

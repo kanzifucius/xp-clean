@@ -28,3 +28,8 @@ Visual walkthrough: [Cleanup workflow](../architecture/workflow.md).
 ## Exit behaviour
 
 Use `--fail-on-blocked` when blocked plans should fail the Job (exit **3**). Other exit codes are listed in [CLI](../cli.md).
+
+## Testing cleanup safely
+
+- `make test` runs unit tests (including `pkg/discover`) and the in-memory e2e pipeline under `test/e2e` (dry-run, instances-only delete, keep/paused, exit 3).
+- `make e2e` runs the same scenarios against kind + Crossplane with XR→ConfigMap/Deployment fixtures (no cloud providers). Local-first — see the repository [`test/e2e/README.md`](https://github.com/kanzifucius/xp-clean/blob/main/test/e2e/README.md).
