@@ -45,16 +45,16 @@ go run ./cmd/xp-clean trace \
 
 ## In-cluster (Helm)
 
-Prefer the chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean):
+Prefer the published OCI chart (chart `--version` omits the leading `v`):
 
 ```bash
-helm upgrade --install xp-clean ./deploy/helm/xp-clean \
+helm upgrade --install xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 \
   --namespace xp-clean \
-  --create-namespace \
-  --set image.tag=v0.1.0-rc.1
+  --create-namespace
 ```
 
-That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
+From a checkout use [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean) and pin `--set image.tag=v0.1.0-rc.1`. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
 
 Without Helm, apply [`config/rbac/role.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml) plus labelled ConfigMaps (`xp-clean.io/policy=true`, data key `policy.yaml`) from [`config/samples/`](https://github.com/kanzifucius/xp-clean/tree/main/config/samples).
 

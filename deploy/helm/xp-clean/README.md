@@ -10,11 +10,30 @@ This chart does **not** ship a CleanupPolicy CRD or claim RBAC.
 
 ## Prerequisites
 
-- Helm 3
+- Helm 3.8+ (OCI support)
 - Cluster access to create Namespace / RBAC / CronJob
-- Network reachability to `ghcr.io` (the published `ghcr.io/kanzifucius/xp-clean` package is **public**; anonymous pull)
+- Network reachability to `ghcr.io` (the published `ghcr.io/kanzifucius/xp-clean` **image** and `charts/xp-clean` **chart** packages are **public**; anonymous pull)
 
-## Install
+## Install from GHCR (OCI)
+
+Chart OCI tags are SemVer **without** a leading `v`. Image tags **keep** the leading `v` (GoReleaser). Release packaging sets both from the same git tag.
+
+```bash
+helm upgrade --install xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 \
+  --namespace xp-clean \
+  --create-namespace
+```
+
+Inspect without installing:
+
+```bash
+helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0-rc.1
+helm template xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 --namespace xp-clean
+```
+
+## Install from a repository checkout
 
 ```bash
 helm upgrade --install xp-clean ./deploy/helm/xp-clean \
@@ -23,9 +42,18 @@ helm upgrade --install xp-clean ./deploy/helm/xp-clean \
   --set image.tag=v0.1.0-rc.1
 ```
 
-From a checkout of this repository the chart path is `deploy/helm/xp-clean`. Pin `image.tag` to the same SemVer you use for the CLI archive.
+From a checkout of this repository the chart path is `deploy/helm/xp-clean`. Prefer pinning `image.tag` to the same SemVer you use for the CLI archive / GHCR image.
 
 For a **private fork** image, create a docker-registry secret and pass `imagePullSecrets` (and set `image.repository` as needed).
+
+## Versioning
+
+| Field | Shape | Example for git tag `v0.1.0-rc.1` |
+|-------|--------|-----------------------------------|
+| Chart / OCI `--version` | SemVer, no `v` | `0.1.0-rc.1` |
+| `appVersion` / `image.tag` | git tag with `v` | `v0.1.0-rc.1` |
+
+On release tags, CI runs `scripts/helm-package.sh` (rewrites `Chart.yaml` + `values.image.tag`, then `helm push` to `oci://ghcr.io/kanzifucius/charts`). Local smoke: `HELM_VERSION=v0.1.0-rc.1 make helm-package` (no push).
 
 ## Dry-run default
 
@@ -37,7 +65,7 @@ For a **private fork** image, create a docker-registry secret and pass `imagePul
 |-----|---------|-------|
 | `namespace.name` | `xp-clean` | Dedicated install namespace |
 | `namespace.create` | `true` | Namespace manifest |
-| `image.repository` | `ghcr.io/kanzifucius/xp-clean` | Public GHCR package |
+| `image.repository` | `ghcr.io/kanzifucius/xp-clean` | Public GHCR image package |
 | `image.tag` | `v0.1.0-rc.1` | Prefer immutable `:vX.Y.Z` |
 | `imagePullSecrets` | `[]` | Optional; private forks only |
 | `dryRun` | `true` | Passed as `--dry-run` |

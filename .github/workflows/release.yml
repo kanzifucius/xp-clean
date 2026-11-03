@@ -45,3 +45,31 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publish the Helm chart as an OCI artefact after binaries/image succeed.
+  # Lands at oci://ghcr.io/kanzifucius/charts/xp-clean:<chart-version>
+  # (chart version = SemVer without leading v). Package should stay public.
+  helm:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Log in to GHCR (Helm OCI)
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+            | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Package and push Helm chart
+        env:
+          VERSION: ${{ github.ref_name }}
+          PUSH: "1"
+          DEST: dist/helm
+        run: |
+          chmod +x scripts/helm-package.sh
+          ./scripts/helm-package.sh

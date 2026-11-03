@@ -101,7 +101,7 @@ Use the **same SemVer tag** for the CLI archive and the image (for example `v0.1
 
 ## Helm chart (in-cluster CronJob)
 
-The chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean) installs into the dedicated **`xp-clean`** namespace:
+The chart installs into the dedicated **`xp-clean`** namespace:
 
 - Namespace, ServiceAccount
 - ClusterRole / ClusterRoleBinding (lab-oriented broad rules from the RBAC sketch; **no claim RBAC**)
@@ -112,9 +112,26 @@ The chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tr
 
 There is **no** CleanupPolicy CRD in this chart. ConfigMaps remain the primary in-cluster policy surface.
 
-### Install from a repository checkout
+### Install from GHCR (OCI)
 
-Because the published GHCR package is **public**, the default install needs no pull secret:
+On each SemVer git tag the release workflow packages the chart and pushes it to GHCR. Chart OCI tags are SemVer **without** a leading `v`; the default `image.tag` inside the package **keeps** `v` so it matches the published app image.
+
+```bash
+helm upgrade --install xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 \
+  --namespace xp-clean \
+  --create-namespace
+```
+
+```bash
+helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0-rc.1
+helm template xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
+  --version 0.1.0-rc.1 --namespace xp-clean
+```
+
+The chart package (`ghcr.io/kanzifucius/charts/xp-clean`) and the app image package are both **public** — no `helm registry login` or `imagePullSecret` for the happy path. After the first chart push, confirm the new GHCR package is set **Public** in GitHub Packages (same operational step as the image).
+
+### Install from a repository checkout
 
 ```bash
 helm upgrade --install xp-clean ./deploy/helm/xp-clean \
@@ -123,13 +140,7 @@ helm upgrade --install xp-clean ./deploy/helm/xp-clean \
   --set image.tag=v0.1.0-rc.1
 ```
 
-For a **private fork** image, create a docker-registry secret and pass `imagePullSecrets` (and set `image.repository` as needed).
-
-Render without applying:
-
-```bash
-helm template xp-clean ./deploy/helm/xp-clean --namespace xp-clean
-```
+For a **private fork** image, create a docker-registry secret and pass `imagePullSecrets` (and set `image.repository` as needed). Source chart path: [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean).
 
 ### Important values
 
@@ -163,8 +174,9 @@ git tag -a v0.1.0 -m "v0.1.0"
 git push origin v0.1.0
 ```
 
-3. Watch the `release` workflow; confirm GitHub Release assets and `docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0`.
+3. Watch the `release` workflow; confirm GitHub Release assets, `docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0`, and `helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0`.
 4. Spot-check `xp-clean version -o json` from the archive or image.
+5. On the **first** chart publish, set the GHCR package `charts/xp-clean` to **Public** (and link it to the repo) if GitHub created it private.
 
 The docs workflow also deploys a **versioned** site for that tag (see [Home](index.md) for `latest` / `dev` aliases).
 
