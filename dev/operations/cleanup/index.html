@@ -1054,6 +1054,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#testing-cleanup-safely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing cleanup safely
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1184,6 +1195,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#testing-cleanup-safely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing cleanup safely
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1227,6 +1249,11 @@
 <p>Visual walkthrough: <a href="../../architecture/workflow/">Cleanup workflow</a>.</p>
 <h2 id="exit-behaviour">Exit behaviour<a class="headerlink" href="#exit-behaviour" title="Permanent link">&para;</a></h2>
 <p>Use <code>--fail-on-blocked</code> when blocked plans should fail the Job (exit <strong>3</strong>). Other exit codes are listed in <a href="../../cli/">CLI</a>.</p>
+<h2 id="testing-cleanup-safely">Testing cleanup safely<a class="headerlink" href="#testing-cleanup-safely" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>make test</code> runs unit tests (including <code>pkg/discover</code>) and the in-memory e2e pipeline under <code>test/e2e</code> (dry-run, instances-only delete, keep/paused, exit 3).</li>
+<li><code>make e2e</code> runs the same scenarios against kind + Crossplane with XR→ConfigMap/Deployment fixtures (no cloud providers). Local-first — see the repository <a href="https://github.com/kanzifucius/xp-clean/blob/main/test/e2e/README.md"><code>test/e2e/README.md</code></a>.</li>
+</ul>
 
 
 
