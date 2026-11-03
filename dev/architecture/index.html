@@ -1148,9 +1148,10 @@
 <li>Layout: thin <code>cmd/xp-clean</code>, <code>internal/cli</code> helpers, domain in <code>pkg/</code></li>
 <li>Optional Teams Workflows notification hooks around <code>RunOnce</code></li>
 <li>GoReleaser + private GHCR on SemVer tags; CI with golangci-lint</li>
+<li>Minimal Helm chart (<code>deploy/helm/xp-clean</code>): CronJob <code>run --once</code> into namespace <code>xp-clean</code>; optional manager Deployment off by default</li>
 </ul>
 <h2 id="deferred">Deferred<a class="headerlink" href="#deferred" title="Permanent link">&para;</a></h2>
-<p>CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, Helm chart, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.</p>
+<p>CleanupPolicy CRD + controller-runtime manager, Prometheus exporters, RBAC generator, kubectl plugin alias, multi-cluster, Slack sink implementation, audit retention sinks, SPDX licence packaging.</p>
 <h2 id="diagrams">Diagrams<a class="headerlink" href="#diagrams" title="Permanent link">&para;</a></h2>
 <p>Interactive <strong>Archify</strong> HTML (showcase quality) is embedded below each caption page. Open the standalone file if you prefer a full browser tab.</p>
 <table>

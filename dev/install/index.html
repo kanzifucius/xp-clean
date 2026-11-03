@@ -698,6 +698,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#helm-chart-in-cluster-cronjob" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helm chart (in-cluster CronJob)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helm chart (in-cluster CronJob)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-from-a-repository-checkout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install from a repository checkout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#important-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Important values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cut-a-release-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1351,6 +1390,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#helm-chart-in-cluster-cronjob" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helm chart (in-cluster CronJob)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helm chart (in-cluster CronJob)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-from-a-repository-checkout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install from a repository checkout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#important-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Important values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cut-a-release-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1481,14 +1559,94 @@
 </code></pre></div>
 <p>In-cluster pulls need an <code>imagePullSecret</code> whose token can <code>read:packages</code> for <code>ghcr.io/kanzifucius/xp-clean</code>.</p>
 <p>Use the <strong>same SemVer tag</strong> for the CLI archive and the image (for example <code>v0.1.0</code>) so operators can correlate laptop and cluster versions.</p>
+<h2 id="helm-chart-in-cluster-cronjob">Helm chart (in-cluster CronJob)<a class="headerlink" href="#helm-chart-in-cluster-cronjob" title="Permanent link">&para;</a></h2>
+<p>The chart at <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a> installs into the dedicated <strong><code>xp-clean</code></strong> namespace:</p>
+<ul>
+<li>Namespace, ServiceAccount</li>
+<li>ClusterRole / ClusterRoleBinding (lab-oriented broad rules from the RBAC sketch; <strong>no claim RBAC</strong>)</li>
+<li>Role / RoleBinding for reading policy ConfigMaps in <code>xp-clean</code></li>
+<li>Sample labelled policy ConfigMap (<code>xp-clean.io/policy=true</code>)</li>
+<li><strong>CronJob</strong> running <code>xp-clean run --once</code> (default install path)</li>
+<li>Optional <code>manager</code> Deployment (<code>manager.enabled</code>, <strong>off by default</strong> — interval stub only)</li>
+</ul>
+<p>There is <strong>no</strong> CleanupPolicy CRD in this chart. ConfigMaps remain the primary in-cluster policy surface.</p>
+<h3 id="install-from-a-repository-checkout">Install from a repository checkout<a class="headerlink" href="#install-from-a-repository-checkout" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>xp-clean
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>docker-registry<span class="w"> </span>ghcr-xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>--docker-server<span class="o">=</span>ghcr.io<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>--docker-username<span class="o">=</span>USERNAME<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>--docker-password<span class="o">=</span><span class="s2">"</span><span class="nv">$CR_PAT</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>-n<span class="w"> </span>xp-clean
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span>--set<span class="w"> </span>imagePullSecrets<span class="o">[</span><span class="m">0</span><span class="o">]</span>.name<span class="o">=</span>ghcr-xp-clean
+</code></pre></div>
+<p>Render without applying:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>template<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span>--namespace<span class="w"> </span>xp-clean
+</code></pre></div>
+<h3 id="important-values">Important values<a class="headerlink" href="#important-values" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image.tag</code></td>
+<td><code>v0.1.0-rc.1</code></td>
+<td>Pin the GHCR image (prefer immutable <code>:vX.Y.Z</code>)</td>
+</tr>
+<tr>
+<td><code>imagePullSecrets</code></td>
+<td><code>[]</code></td>
+<td>Required for private GHCR pulls</td>
+</tr>
+<tr>
+<td><code>dryRun</code></td>
+<td><code>true</code></td>
+<td>Passed as <code>--dry-run</code> on the CronJob / manager</td>
+</tr>
+<tr>
+<td><code>cronjob.schedule</code></td>
+<td><code>0 */6 * * *</code></td>
+<td>Kubernetes CronJob schedule</td>
+</tr>
+<tr>
+<td><code>cronjob.enabled</code></td>
+<td><code>true</code></td>
+<td>Default ops path</td>
+</tr>
+<tr>
+<td><code>manager.enabled</code></td>
+<td><code>false</code></td>
+<td>Optional secondary Deployment</td>
+</tr>
+<tr>
+<td><code>resources</code></td>
+<td>small requests/limits</td>
+<td>Pod resource settings</td>
+</tr>
+<tr>
+<td><code>policy.create</code></td>
+<td><code>true</code></td>
+<td>Install the sample policy ConfigMap</td>
+</tr>
+</tbody>
+</table>
+<p>Live deletes need <code>dryRun: false</code> in <strong>both</strong> chart values and the policy ConfigMap document. Edit selectors on the sample policy before enabling deletes. Full reference: the chart <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md"><code>README.md</code></a> and <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml"><code>values.yaml</code></a>.</p>
 <h2 id="cut-a-release-maintainers">Cut a release (maintainers)<a class="headerlink" href="#cut-a-release-maintainers" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Ensure <code>main</code> is green.</li>
 <li>Tag and push (do not create the Release in the UI):</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
 </code></pre></div>
 <ol>
 <li>Watch the <code>release</code> workflow; confirm GitHub Release assets and <code>docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0</code>.</li>
