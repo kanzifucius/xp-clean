@@ -1147,7 +1147,7 @@
 <li>Cobra CLI: <code>run</code> / <code>plan</code> / <code>trace</code> / <code>manager</code> / <code>version</code> / <code>completion</code></li>
 <li>Layout: thin <code>cmd/xp-clean</code>, <code>internal/cli</code> helpers, domain in <code>pkg/</code></li>
 <li>Optional Teams Workflows notification hooks around <code>RunOnce</code></li>
-<li>GoReleaser + private GHCR on SemVer tags; CI with golangci-lint</li>
+<li>GoReleaser + <strong>public</strong> GHCR on SemVer tags (anonymous pull; see <a href="../install/#maintainer-ghcr-visibility">Install</a>); CI with golangci-lint</li>
 <li>Minimal Helm chart (<code>deploy/helm/xp-clean</code>): CronJob <code>run --once</code> into namespace <code>xp-clean</code>; optional manager Deployment off by default</li>
 </ul>
 <h2 id="deferred">Deferred<a class="headerlink" href="#deferred" title="Permanent link">&para;</a></h2>
