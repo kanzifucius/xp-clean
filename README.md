@@ -200,20 +200,13 @@ Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Pr
 Prefer the chart under [`deploy/helm/xp-clean`](deploy/helm/xp-clean). It installs into the dedicated **`xp-clean`** namespace with ServiceAccount, lab-oriented ClusterRole/Binding (no claim RBAC), a Role for policy ConfigMaps, a sample labelled policy ConfigMap, and a **CronJob** running `xp-clean run --once` by default. Dry-run defaults to **true**. The optional `manager` Deployment is off unless you set `manager.enabled=true`.
 
 ```bash
-kubectl create namespace xp-clean
-kubectl create secret docker-registry ghcr-xp-clean \
-  --docker-server=ghcr.io \
-  --docker-username=USERNAME \
-  --docker-password="$CR_PAT" \
-  -n xp-clean
-
 helm upgrade --install xp-clean ./deploy/helm/xp-clean \
   --namespace xp-clean \
-  --set image.tag=v0.1.0-rc.1 \
-  --set imagePullSecrets[0].name=ghcr-xp-clean
+  --create-namespace \
+  --set image.tag=v0.1.0-rc.1
 ```
 
-`helm template xp-clean ./deploy/helm/xp-clean -n xp-clean` renders without a cluster. Hand-rolled manifests remain in [`config/rbac/role.yaml`](config/rbac/role.yaml) and [`config/samples/`](config/samples/) if you are not using Helm. See [Install](https://kanzifucius.github.io/xp-clean/latest/install/) for values (`schedule`, `dryRun`, `resources`, `imagePullSecrets`).
+The published GHCR package is **public**, so no `imagePullSecret` is required for the default image. `helm template xp-clean ./deploy/helm/xp-clean -n xp-clean` renders without a cluster. Hand-rolled manifests remain in [`config/rbac/role.yaml`](config/rbac/role.yaml) and [`config/samples/`](config/samples/) if you are not using Helm. See [Install](https://kanzifucius.github.io/xp-clean/latest/install/) for values (`schedule`, `dryRun`, `resources`, optional `imagePullSecrets` for private forks).
 
 ## Safety notes
 

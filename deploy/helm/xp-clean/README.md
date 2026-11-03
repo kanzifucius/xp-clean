@@ -12,26 +12,20 @@ This chart does **not** ship a CleanupPolicy CRD or claim RBAC.
 
 - Helm 3
 - Cluster access to create Namespace / RBAC / CronJob
-- A pull secret for the **private** GHCR image `ghcr.io/kanzifucius/xp-clean` (token with `read:packages`)
+- Network reachability to `ghcr.io` (the published `ghcr.io/kanzifucius/xp-clean` package is **public**; anonymous pull)
 
 ## Install
 
 ```bash
-# Create a pull secret in the target namespace (or let the chart create the NS first).
-kubectl create namespace xp-clean
-kubectl create secret docker-registry ghcr-xp-clean \
-  --docker-server=ghcr.io \
-  --docker-username=USERNAME \
-  --docker-password="$CR_PAT" \
-  -n xp-clean
-
 helm upgrade --install xp-clean ./deploy/helm/xp-clean \
   --namespace xp-clean \
-  --set image.tag=v0.1.0-rc.1 \
-  --set imagePullSecrets[0].name=ghcr-xp-clean
+  --create-namespace \
+  --set image.tag=v0.1.0-rc.1
 ```
 
 From a checkout of this repository the chart path is `deploy/helm/xp-clean`. Pin `image.tag` to the same SemVer you use for the CLI archive.
+
+For a **private fork** image, create a docker-registry secret and pass `imagePullSecrets` (and set `image.repository` as needed).
 
 ## Dry-run default
 
@@ -43,9 +37,9 @@ From a checkout of this repository the chart path is `deploy/helm/xp-clean`. Pin
 |-----|---------|-------|
 | `namespace.name` | `xp-clean` | Dedicated install namespace |
 | `namespace.create` | `true` | Namespace manifest |
-| `image.repository` | `ghcr.io/kanzifucius/xp-clean` | Private GHCR |
+| `image.repository` | `ghcr.io/kanzifucius/xp-clean` | Public GHCR package |
 | `image.tag` | `v0.1.0-rc.1` | Prefer immutable `:vX.Y.Z` |
-| `imagePullSecrets` | `[]` | Required for private pulls |
+| `imagePullSecrets` | `[]` | Optional; private forks only |
 | `dryRun` | `true` | Passed as `--dry-run` |
 | `cronjob.enabled` | `true` | Default install path |
 | `cronjob.schedule` | `0 */6 * * *` | Kubernetes CronJob schedule |

@@ -50,8 +50,8 @@ Prefer the chart at [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-c
 ```bash
 helm upgrade --install xp-clean ./deploy/helm/xp-clean \
   --namespace xp-clean \
-  --set image.tag=v0.1.0-rc.1 \
-  --set imagePullSecrets[0].name=ghcr-xp-clean
+  --create-namespace \
+  --set image.tag=v0.1.0-rc.1
 ```
 
 That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
