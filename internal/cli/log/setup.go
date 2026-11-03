@@ -9,6 +9,8 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 )
 
 // Options control CLI logging (stderr). Machine output stays on stdout.
@@ -21,6 +23,19 @@ type Options struct {
 	Encoder string
 	// Out defaults to stderr.
 	Out io.Writer
+}
+
+// LevelFromVerbosity maps kubectl-style -v integers to zap level names.
+// 0 → error (quiet CLI default), 1 → info, 2+ → debug.
+func LevelFromVerbosity(v int) string {
+	switch {
+	case v <= 0:
+		return "error"
+	case v == 1:
+		return "info"
+	default:
+		return "debug"
+	}
 }
 
 // Setup builds a logr.Logger writing to stderr (or Out).
@@ -68,6 +83,17 @@ func Setup(opts Options) (logr.Logger, *zap.Logger, error) {
 		z = zap.New(core)
 	}
 	return zapr.NewLogger(z), z, nil
+}
+
+// ConfigureKubernetesLogging routes klog through logr and silences client-go
+// REST warning headers unless verbose is true.
+func ConfigureKubernetesLogging(logger logr.Logger, verbose bool) {
+	klog.SetLogger(logger)
+	if verbose {
+		rest.SetDefaultWarningHandler(rest.WarningLogger{})
+		return
+	}
+	rest.SetDefaultWarningHandler(rest.NoWarnings{})
 }
 
 // Discard returns a no-op logger for tests.
