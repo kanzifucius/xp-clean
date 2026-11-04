@@ -33,3 +33,16 @@ func TestTruncateErrors(t *testing.T) {
 		t.Fatalf("%#v", errs)
 	}
 }
+
+func TestFormatObjectLine(t *testing.T) {
+	got := notify.FormatObjectLine(notify.ObjectSummary{
+		Kind: "XDemo", Namespace: "demo", Name: "app", Reason: "instance_root",
+	})
+	if got != "XDemo demo/app — instance_root" {
+		t.Fatalf("%q", got)
+	}
+	got = notify.FormatObjectLine(notify.ObjectSummary{Kind: "Composition", Name: "c1", Reason: "definition_scope_all"})
+	if got != "Composition c1 — definition_scope_all" {
+		t.Fatalf("%q", got)
+	}
+}

@@ -109,5 +109,70 @@ func EventFromResult(
 	if runErr != nil && ev.ErrorCount == 0 {
 		ev.ErrorCount = 1
 	}
+	objs := objectsFromResult(kind, meta.DryRun, result)
+	ev.ObjectsTotal = len(objs)
+	ev.Objects = TruncateObjects(objs, MaxObjectsInEvent)
 	return ev
+}
+
+// objectsFromResult collects delete targets with planner reasons.
+// Live finished → successfully deleted audit entries; dry-run / failed → planned
+// steps (or dry-run-delete / attempted delete audit when plans are empty).
+func objectsFromResult(kind EventKind, dryRun bool, result cleanup.RunResult) []ObjectSummary {
+	if kind == KindStarted {
+		return nil
+	}
+
+	liveFinished := kind == KindFinished && !dryRun
+	if liveFinished {
+		return objectsFromAudit(result, "delete")
+	}
+
+	if objs := objectsFromPlans(result); len(objs) > 0 {
+		return objs
+	}
+	// Fallback when plans were not retained but execute wrote audit lines.
+	if dryRun || kind == KindFailed {
+		objs := objectsFromAudit(result, "dry-run-delete")
+		if kind == KindFailed {
+			objs = append(objs, objectsFromAudit(result, "delete")...)
+		}
+		return objs
+	}
+	return nil
+}
+
+func objectsFromPlans(result cleanup.RunResult) []ObjectSummary {
+	var out []ObjectSummary
+	for _, p := range result.Plans {
+		for _, step := range p.Steps {
+			out = append(out, ObjectSummary{
+				APIVersion: step.Ref.Group + "/" + step.Ref.Version,
+				Kind:       step.Ref.Kind,
+				Namespace:  step.Ref.Namespace,
+				Name:       step.Ref.Name,
+				Reason:     step.Reason,
+			})
+		}
+	}
+	return out
+}
+
+func objectsFromAudit(result cleanup.RunResult, action string) []ObjectSummary {
+	var out []ObjectSummary
+	for _, er := range result.Results {
+		for _, e := range er.AuditEntries {
+			if e.Action != action {
+				continue
+			}
+			out = append(out, ObjectSummary{
+				APIVersion: e.Object.APIVersion,
+				Kind:       e.Object.Kind,
+				Namespace:  e.Object.Namespace,
+				Name:       e.Object.Name,
+				Reason:     e.Reason,
+			})
+		}
+	}
+	return out
 }

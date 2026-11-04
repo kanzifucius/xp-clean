@@ -28,7 +28,12 @@ func TestBuildPayloadGoldenShape(t *testing.T) {
 		Planned:    14,
 		Deleted:    0,
 		Skipped:    14,
-		LogURL:     "https://logs.example/search?q=01JTEST",
+		Objects: []notify.ObjectSummary{
+			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-a", Reason: "instance_root"},
+			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-b", Reason: "instance_root"},
+		},
+		ObjectsTotal: 16,
+		LogURL:       "https://logs.example/search?q=01JTEST",
 	}
 	raw, err := teams.BuildPayload(ev)
 	if err != nil {
@@ -54,10 +59,57 @@ func TestBuildPayloadGoldenShape(t *testing.T) {
 		t.Fatalf("card type=%v", content["type"])
 	}
 	s := string(raw)
-	for _, want := range []string{"xp-clean: run finished", "test-stacks", "01JTEST", "Open logs", "No objects deleted"} {
+	for _, want := range []string{
+		"xp-clean: run finished",
+		"test-stacks",
+		"01JTEST",
+		"Open logs",
+		"No objects deleted",
+		"Would delete",
+		"XDemo demo/app-a — instance_root",
+		"XDemo demo/app-b — instance_root",
+		"… and 14 more (see Open logs)",
+	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("payload missing %q:\n%s", want, s)
 		}
+	}
+}
+
+func TestBuildPayloadStartedOmitsObjectList(t *testing.T) {
+	raw, err := teams.BuildPayload(notify.Event{
+		Kind:    notify.KindStarted,
+		RunID:   "r-start",
+		Policy:  "p",
+		DryRun:  true,
+		Objects: []notify.ObjectSummary{{Kind: "XDemo", Name: "should-not-appear", Reason: "instance_root"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if strings.Contains(s, "Would delete") || strings.Contains(s, "should-not-appear") {
+		t.Fatalf("started card must stay lean:\n%s", s)
+	}
+}
+
+func TestBuildPayloadLiveDeletedHeading(t *testing.T) {
+	raw, err := teams.BuildPayload(notify.Event{
+		Kind: notify.KindFinished,
+		Objects: []notify.ObjectSummary{
+			{Kind: "XDemo", Namespace: "ns", Name: "gone", Reason: "instance_root"},
+		},
+		ObjectsTotal: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if !strings.Contains(s, "Deleted") || !strings.Contains(s, "XDemo ns/gone — instance_root") {
+		t.Fatalf("live finished payload:\n%s", s)
+	}
+	if strings.Contains(s, "Would delete") {
+		t.Fatal("live finished must not use Would delete")
 	}
 }
 
