@@ -134,7 +134,8 @@ func TruncateObjects(objs []ObjectSummary, max int) []ObjectSummary {
 	return out
 }
 
-// FormatObjectLine renders Kind namespace/name — reason for chat cards.
+// FormatObjectLine renders Kind namespace/name — reason for quiet CLI and chat cards.
+// Reason is the planner/audit field (e.g. instance_root); omitted when empty.
 func FormatObjectLine(o ObjectSummary) string {
 	id := strings.TrimSpace(o.Kind)
 	if id == "" {

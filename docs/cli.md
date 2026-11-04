@@ -53,9 +53,11 @@ Default `run --once` (roots + instances-only) prints a compact human summary on 
 ```text
 policy=<name> dryRun=<bool> mode=roots scope=instances-only
 would delete N
-  <Kind> <namespace>/<name>
+  <Kind> <namespace>/<name> — <reason>
   …
 ```
+
+Each object line includes the planner reason (for example `instance_root`). The same `Kind namespace/name — reason` shape is used on Teams Adaptive Cards.
 
 No per-object audit JSON, no `trace …` dumps, and no `stack … steps=1` / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with `-v=1` (or `--log-level=info`). `mode=trace`, `scope=all`, and multi-step plans keep detailed stack listings without requiring `-v`. Machine-readable DeletePlans remain on `plan -o json|yaml`. Scheduled `manager` runs still emit audit JSON on stdout.
 
