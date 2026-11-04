@@ -962,6 +962,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#migration-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration notes
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1201,6 +1212,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#migration-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration notes
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1224,10 +1246,10 @@
 <h1 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h1>
 <p>Standalone Cobra binary <code>xp-clean</code>. kubectl plugin documentation is deferred — use the standalone CLI for now.</p>
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>xp-clean run --once [--config PATH] [--policy-namespace NS] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>xp-clean plan [--config PATH] [--policy-namespace NS] [--scope …] [--fail-on-blocked] [-o json|yaml]
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>xp-clean trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>xp-clean manager [--config PATH] [--policy-namespace NS]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--fail-on-blocked] [-o json|yaml]
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>xp-clean debug trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait]
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>xp-clean version [-o short|json|yaml]
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>xp-clean completion bash|zsh|fish|powershell
 </code></pre></div>
@@ -1241,19 +1263,19 @@
 <tbody>
 <tr>
 <td><code>run --once</code></td>
-<td>Discover → plan → optional execute (CronJob-friendly)</td>
+<td><strong>Day-to-day.</strong> Discover → plan → optional execute. Defaults to a <strong>dry-run plan</strong> of <strong>roots</strong> (highest-parent stacks matched / would delete)</td>
 </tr>
 <tr>
 <td><code>plan</code></td>
-<td>Planner output only (always dry-run semantics for deletes)</td>
+<td>Deprecated thin wrapper: machine-readable DeletePlans (<code>-o json\|yaml</code>), always dry-run</td>
 </tr>
 <tr>
-<td><code>trace</code></td>
-<td>Print one composition tree</td>
+<td><code>debug trace</code></td>
+<td>Print one composition tree (debug only; <code>-n</code> valid here)</td>
 </tr>
 <tr>
 <td><code>manager</code></td>
-<td>Long-running schedule stub</td>
+<td>Long-running schedule stub (same <code>--apply</code> / dry-run / mode / wait gates as <code>run</code>)</td>
 </tr>
 <tr>
 <td><code>version</code> / <code>completion</code></td>
@@ -1261,6 +1283,7 @@
 </tr>
 </tbody>
 </table>
+<p>Root <code>xp-clean trace</code> remains as a <strong>hidden</strong> compatibility alias of <code>debug trace</code>.</p>
 <h2 id="flags-worth-knowing">Flags worth knowing<a class="headerlink" href="#flags-worth-knowing" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1279,8 +1302,20 @@
 <td>Namespace for labelled ConfigMaps (default <code>xp-clean</code>)</td>
 </tr>
 <tr>
+<td><code>--apply</code></td>
+<td>Happy-path <strong>live</strong> switch. Still requires policy <code>dryRun: false</code>. Without <code>--apply</code>, <code>run</code> always plans only</td>
+</tr>
+<tr>
+<td><code>--mode</code> / <code>XP_CLEAN_MODE</code></td>
+<td><code>roots</code> (default) or <code>trace</code>. Roots-only plans highest-parent XRs; <code>trace</code> builds full parent→child trees</td>
+</tr>
+<tr>
+<td><code>--wait</code> / <code>XP_CLEAN_WAIT</code></td>
+<td>Opt-in: poll until each delete is gone (honours <code>deletion.waitTimeout</code>). <strong>Default is no wait</strong></td>
+</tr>
+<tr>
 <td><code>--dry-run</code> / <code>XP_CLEAN_DRY_RUN</code></td>
-<td>Boolean planner dry-run (not kubectl API-server dry-run). Unset keeps policy value (default <code>true</code>)</td>
+<td>Compatibility boolean planner dry-run (not kubectl API-server dry-run). <code>--dry-run=true</code> forces a plan; <code>--dry-run=false</code> allows live only when policy <code>dryRun</code> is false (prefer <code>--apply</code>)</td>
 </tr>
 <tr>
 <td><code>--scope</code> / <code>XP_CLEAN_SCOPE</code></td>
@@ -1300,7 +1335,7 @@
 </tr>
 <tr>
 <td><code>-n</code> / <code>--namespace</code></td>
-<td>Valid on <strong><code>trace</code> only</strong>. Rejected on <code>run</code> / <code>plan</code> (usage / exit 2)</td>
+<td>Valid on <strong><code>debug trace</code> only</strong>. Rejected on <code>run</code> / <code>plan</code> (usage / exit 2)</td>
 </tr>
 <tr>
 <td><code>-v</code> / <code>--v</code></td>
@@ -1312,7 +1347,7 @@
 </tr>
 </tbody>
 </table>
-<p>Logging stays on <strong>zap/logr</strong> end-to-end, but interactive commands (<code>run</code>, <code>plan</code>, <code>trace</code>, <code>version</code>) are <strong>quiet by default</strong>: only command results on stdout and real failures on stderr. Pass <code>-v=1</code> (or <code>--log-level=info</code>) to restore detail. <code>manager</code> defaults to <strong>info</strong>. Client-go / discovery warning noise is muted unless verbose. Encoder flags: <code>--zap-devel</code>, <code>--zap-encoder</code>. Machine output (<code>plan</code>, <code>trace -o json|yaml</code>, audit JSON on <code>run</code>) stays on <strong>stdout</strong>.</p>
+<p>Logging stays on <strong>zap/logr</strong> end-to-end, but interactive commands (<code>run</code>, <code>plan</code>, <code>debug trace</code>, <code>version</code>) are <strong>quiet by default</strong>: only command results on stdout and real failures on stderr. Pass <code>-v=1</code> (or <code>--log-level=info</code>) to restore detail. <code>manager</code> defaults to <strong>info</strong>. Client-go / discovery warning noise is muted unless verbose. Encoder flags: <code>--zap-devel</code>, <code>--zap-encoder</code>. Machine output (<code>plan</code>, <code>debug trace -o json|yaml</code>, audit JSON on <code>run</code>) stays on <strong>stdout</strong>.</p>
 <h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1342,6 +1377,43 @@
 </table>
 <h2 id="precedence">Precedence<a class="headerlink" href="#precedence" title="Permanent link">&para;</a></h2>
 <p>Flags &gt; env &gt; policy document &gt; built-in defaults. No Viper. Webhook URLs come only from env vars named by each sink (default <code>XP_CLEAN_TEAMS_WEBHOOK_URL</code>).</p>
+<p>Live deletes are <strong>two-key</strong>: CLI <code>--apply</code> (or compatibility <code>--dry-run=false</code>) <strong>and</strong> policy <code>dryRun: false</code>. Flags never unilaterally force live past a policy that still has <code>dryRun: true</code>.</p>
+<p>Live deletes always use Kubernetes <strong><code>DeletionPropagation=Foreground</code></strong>. Waiting for the object to disappear is separate and <strong>off by default</strong>.</p>
+<h2 id="migration-notes">Migration notes<a class="headerlink" href="#migration-notes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Old habit</th>
+<th>Prefer now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>xp-clean plan</code> for interactive dry-run</td>
+<td><code>xp-clean run --once</code></td>
+</tr>
+<tr>
+<td><code>xp-clean plan -o json</code> in scripts</td>
+<td>Still works (deprecated wrapper); or parse <code>run</code> summary / audit</td>
+</tr>
+<tr>
+<td><code>xp-clean trace …</code></td>
+<td><code>xp-clean debug trace …</code></td>
+</tr>
+<tr>
+<td><code>--dry-run=false</code> for live</td>
+<td><code>--apply</code> (and keep policy <code>dryRun: false</code>)</td>
+</tr>
+<tr>
+<td>Always walk full composition trees</td>
+<td>Default <code>roots</code>; opt in with <code>--mode=trace</code> / <code>deletion.mode: trace</code></td>
+</tr>
+<tr>
+<td>Always poll after delete</td>
+<td>Opt in with <code>--wait</code> / <code>deletion.wait: true</code></td>
+</tr>
+</tbody>
+</table>
 
 
 

@@ -1238,24 +1238,23 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>make<span class="w"> </span>build<span class="w">   </span><span class="c1"># writes bin/xp-clean with version ldflags</span>
 </code></pre></div>
 <h2 id="dry-run-locally-file-override">Dry-run locally (file override)<a class="headerlink" href="#dry-run-locally-file-override" title="Permanent link">&para;</a></h2>
-<p>There is <strong>no</strong> implicit sample path. Pass <code>--config</code> every time you use a file:</p>
+<p>There is <strong>no</strong> implicit sample path. Pass <code>--config</code> every time you use a file. <code>run --once</code> defaults to a dry-run plan (stacks matched / would delete):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/xp-clean<span class="w"> </span>run<span class="w"> </span>--once<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--config<span class="w"> </span>config/samples/cleanuppolicy.yaml<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--dry-run<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--kubeconfig<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.kube/config"</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--kubeconfig<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.kube/config"</span>
 </code></pre></div>
-<p>Inspect the planner output without executing:</p>
+<p>Scripts that need machine-readable DeletePlans can still use the thin deprecated wrapper:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/xp-clean<span class="w"> </span>plan<span class="w"> </span>--config<span class="w"> </span>config/samples/cleanuppolicy.yaml<span class="w"> </span>-o<span class="w"> </span>json
 </code></pre></div>
-<p>Trace one XR:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/xp-clean<span class="w"> </span>trace<span class="w"> </span><span class="se">\</span>
+<p>Inspect one composition tree (debug only):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/xp-clean<span class="w"> </span>debug<span class="w"> </span>trace<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--name<span class="w"> </span>test-db<span class="w"> </span>-n<span class="w"> </span>xp-test-1<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--group<span class="w"> </span>db.dev.example.org<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>--kind<span class="w"> </span>XDB
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Live deletes</p>
-<p>Live deletes require <code>dryRun: false</code> in the policy <strong>and</strong> <code>--dry-run=false</code>. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.</p>
+<p>Live deletes require <strong><code>--apply</code></strong> and policy <code>dryRun: false</code>. Deletes use <strong>foreground</strong> propagation. Waiting is opt-in (<code>--wait</code>). Prefer the default dry-run roots plan until stacks matched / would delete looks correct. Use <code>--mode=trace</code> for full trees. Xp-clean never strips Crossplane finalizers.</p>
 </div>
 <h2 id="in-cluster-helm">In-cluster (Helm)<a class="headerlink" href="#in-cluster-helm" title="Permanent link">&para;</a></h2>
 <p>Prefer the published OCI chart (chart <code>--version</code> omits the leading <code>v</code>):</p>
@@ -1264,7 +1263,7 @@
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--create-namespace
 </code></pre></div>
-<p>From a checkout use <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a> and pin <code>--set image.tag=v0.1.0-rc.1</code>. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (<code>xp-clean run --once</code>) with <strong>dry-run on by default</strong>. The optional manager Deployment stays off unless <code>manager.enabled=true</code>.</p>
+<p>From a checkout use <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a> and pin <code>--set image.tag=v0.1.0-rc.1</code>. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap (label eligibility + TTL + dry-run + instances-only), and a CronJob (<code>xp-clean run --once</code>) with <strong>dry-run on by default</strong>. The optional manager Deployment stays off unless <code>manager.enabled=true</code>.</p>
 <p>Without Helm, apply <a href="https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml"><code>config/rbac/role.yaml</code></a> plus labelled ConfigMaps (<code>xp-clean.io/policy=true</code>, data key <code>policy.yaml</code>) from <a href="https://github.com/kanzifucius/xp-clean/tree/main/config/samples"><code>config/samples/</code></a>.</p>
 <p>See <a href="../concepts/policy/">Policy and eligibility</a> and <a href="../install/">Install</a> for values, GHCR pull, and release notes.</p>
 

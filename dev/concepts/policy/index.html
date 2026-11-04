@@ -753,10 +753,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#eligibility" class="md-nav__link">
+  <a href="#day-1-essentials" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eligibility
+        Day-1 essentials
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delete semantics
       
     </span>
   </a>
@@ -775,13 +797,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#policy-document-shape-summary" class="md-nav__link">
+  <a href="#advanced" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Policy document shape (summary)
+        Advanced
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Advanced">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-glob-and-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full glob AND matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-trace-and-scope-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mode: trace and scope: all
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orphan-modes-budgets-wait-notify-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orphan modes, budgets, wait, notify sinks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1219,10 +1280,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#eligibility" class="md-nav__link">
+  <a href="#day-1-essentials" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eligibility
+        Day-1 essentials
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delete semantics
       
     </span>
   </a>
@@ -1241,13 +1324,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#policy-document-shape-summary" class="md-nav__link">
+  <a href="#advanced" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Policy document shape (summary)
+        Advanced
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Advanced">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-glob-and-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full glob AND matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-trace-and-scope-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mode: trace and scope: all
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orphan-modes-budgets-wait-notify-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orphan modes, budgets, wait, notify sinks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1307,17 +1429,112 @@
 </tr>
 </tbody>
 </table>
-<p>Multiple labelled ConfigMaps may coexist for <strong>per-team multi-tenancy</strong> (different TTLs / globs per team).</p>
+<p>Multiple labelled ConfigMaps may coexist for <strong>per-team multi-tenancy</strong> (different TTLs / selectors per team).</p>
 <p>Samples in the repository:</p>
 <ul>
-<li><a href="https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap.yaml"><code>config/samples/configmap.yaml</code></a> — team A</li>
-<li><a href="https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap-team-b.yaml"><code>config/samples/configmap-team-b.yaml</code></a> — team B</li>
+<li><a href="https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap.yaml"><code>config/samples/configmap.yaml</code></a> — day-1 team A (labels + TTL + roots)</li>
 <li><a href="https://github.com/kanzifucius/xp-clean/blob/main/config/samples/cleanuppolicy.yaml"><code>config/samples/cleanuppolicy.yaml</code></a> — file form for <code>--config</code> only</li>
+<li><a href="https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap-team-b.yaml"><code>config/samples/configmap-team-b.yaml</code></a> — advanced multi-tenant globs</li>
 </ul>
 <h3 id="file-override">File override<a class="headerlink" href="#file-override" title="Permanent link">&para;</a></h3>
 <p>Pass <strong><code>--config PATH</code></strong> (or <code>XP_CLEAN_CONFIG</code>) for local or mounted file use. There is <strong>no</strong> implicit repo-relative sample path.</p>
-<h2 id="eligibility">Eligibility<a class="headerlink" href="#eligibility" title="Permanent link">&para;</a></h2>
-<p>Matching uses <strong>labels and/or glob patterns</strong>. Operators may use labels, globs, or both. When both are set, an object must satisfy <strong>all non-empty constraint groups (AND)</strong>.</p>
+<h2 id="day-1-essentials">Day-1 essentials<a class="headerlink" href="#day-1-essentials" title="Permanent link">&para;</a></h2>
+<p>Start with these knobs:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>What to set</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Eligibility</strong></td>
+<td><code>selectors.requireLabels</code> (for example <code>xp-clean.io/eligible: "true"</code>)</td>
+</tr>
+<tr>
+<td><strong>TTL</strong></td>
+<td><code>ttl.respectResourceTTL</code> + <code>ttl.defaultTTL</code></td>
+</tr>
+<tr>
+<td><strong>Dry-run</strong></td>
+<td><code>dryRun: true</code> until you are ready; live also needs CLI <code>--apply</code></td>
+</tr>
+<tr>
+<td><strong>Mode</strong></td>
+<td><code>deletion.mode: roots</code> (default) — highest-parent XRs only</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td><code>deletion.scope: instances-only</code> (default; safer)</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">team-a</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">dryRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">selectors</span><span class="p">:</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">requireLabels</span><span class="p">:</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">xp-clean.io/eligible</span><span class="p">:</span><span class="w"> </span><span class="s">"true"</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">ttl</span><span class="p">:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">respectResourceTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">defaultTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168h</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nt">deletion</span><span class="p">:</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">roots</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">instances-only</span>
+</code></pre></div>
+<div class="admonition important">
+<p class="admonition-title">Namespace alone is not enough</p>
+<p>Namespace-implies-eligibility is <strong>not</strong> the model. Eligibility never comes from <code>-n</code> / <code>--namespace</code> on <code>run</code> or <code>plan</code> (that flag is rejected there). Use policy labels and/or globs only. <code>-n</code> is valid on <code>debug trace</code> only.</p>
+</div>
+<p>TTL fields gate when an eligible stack is old enough to delete.</p>
+<h2 id="cleanup-modes">Cleanup modes<a class="headerlink" href="#cleanup-modes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><code>deletion.mode</code> / <code>--mode</code></th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>roots</code> (<strong>default</strong>)</td>
+<td>Discover + match + highest parents. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk</td>
+</tr>
+<tr>
+<td><code>trace</code></td>
+<td>Opt-in. Builds parent→child traces for detailed plans, nested keep/paused gates, orphans, and richer execute</td>
+</tr>
+</tbody>
+</table>
+<h2 id="delete-semantics">Delete semantics<a class="headerlink" href="#delete-semantics" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Live deletes always use Kubernetes <strong><code>DeletionPropagation=Foreground</code></strong>.</li>
+<li><strong>Waiting</strong> after delete is <strong>opt-in</strong>: <code>deletion.wait: true</code> or CLI <code>--wait</code>. When wait is on, honour <code>deletion.waitTimeout</code> and audit stuck finalizers. When wait is off (default), issue the foreground Delete and continue.</li>
+<li>Xp-clean <strong>never</strong> strips Crossplane finalizers.</li>
+</ul>
+<h2 id="deletion-scope">Deletion scope<a class="headerlink" href="#deletion-scope" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><code>deletion.scope</code></th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>instances-only</code> (<strong>default</strong>)</td>
+<td>Safer — root XRs (and composed resources via GC / foreground)</td>
+</tr>
+<tr>
+<td><code>all</code></td>
+<td>Advanced — instances first, then definitions (see below)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="advanced">Advanced<a class="headerlink" href="#advanced" title="Permanent link">&para;</a></h2>
+<p>Still supported in the schema; keep them out of first-run samples unless you need them.</p>
+<h3 id="full-glob-and-matrix">Full glob AND matrix<a class="headerlink" href="#full-glob-and-matrix" title="Permanent link">&para;</a></h3>
+<p>Matching uses <strong>labels and/or glob patterns</strong>. When both are set, an object must satisfy <strong>all non-empty constraint groups (AND)</strong>.</p>
 <table>
 <thead>
 <tr>
@@ -1348,65 +1565,88 @@
 </tr>
 </tbody>
 </table>
-<div class="admonition important">
-<p class="admonition-title">Namespace alone is not enough</p>
-<p>Namespace-implies-eligibility is <strong>not</strong> the model. Eligibility never comes from <code>-n</code> / <code>--namespace</code> on <code>run</code> or <code>plan</code> (that flag is rejected there). Use policy labels and/or globs only.</p>
-</div>
-<p>TTL fields (<code>respectResourceTTL</code>, <code>defaultTTL</code>, …) gate when an eligible stack is old enough to delete.</p>
-<h2 id="deletion-scope">Deletion scope<a class="headerlink" href="#deletion-scope" title="Permanent link">&para;</a></h2>
+<h3 id="mode-trace-and-scope-all"><code>mode: trace</code> and <code>scope: all</code><a class="headerlink" href="#mode-trace-and-scope-all" title="Permanent link">&para;</a></h3>
+<p>Prefer <code>deletion.mode: trace</code> when you need nested keep/paused visibility, orphan reporting detail, or definition-layer planning. <code>deletion.scope: all</code> deletes instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs <code>allowXRDDeletion: true</code>.</p>
+<h3 id="orphan-modes-budgets-wait-notify-sinks">Orphan modes, budgets, wait, notify sinks<a class="headerlink" href="#orphan-modes-budgets-wait-notify-sinks" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th><code>deletion.scope</code></th>
-<th>Behaviour</th>
+<th>Field</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>instances-only</code> (<strong>default</strong>)</td>
-<td>Safer — XRs and composed resources / MRs</td>
+<td><code>deletion.wait</code></td>
+<td>Opt-in poll-until-gone (default <code>false</code>); override with <code>--wait</code></td>
 </tr>
 <tr>
-<td><code>all</code></td>
-<td>Instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs <code>allowXRDDeletion: true</code></td>
+<td><code>deletion.waitTimeout</code></td>
+<td>Used only when wait is on (default <code>30m</code>)</td>
+</tr>
+<tr>
+<td><code>deletion.orphanMode</code></td>
+<td>MVP <code>report</code> surfaces orphans without inventing parallel ownership</td>
+</tr>
+<tr>
+<td><code>deletion.maxTracesPerRun</code> / <code>maxDeletesPerRun</code></td>
+<td>Per-run budgets</td>
+</tr>
+<tr>
+<td><code>deletion.deletePaused</code></td>
+<td>Default <code>false</code> — skip <code>crossplane.io/paused</code></td>
+</tr>
+<tr>
+<td><code>ttl.applyDefaultTTLIfMissing</code></td>
+<td>Apply <code>defaultTTL</code> when the resource has no TTL annotation</td>
+</tr>
+<tr>
+<td><code>observability.notifications</code></td>
+<td>Multi-sink schema (Teams MVP); see <a href="../../operations/notifications/">Notifications</a></td>
+</tr>
+<tr>
+<td><code>schedule</code> / <code>timezone</code></td>
+<td>Used by <code>manager</code> interval stub / future cron</td>
 </tr>
 </tbody>
 </table>
-<h2 id="policy-document-shape-summary">Policy document shape (summary)<a class="headerlink" href="#policy-document-shape-summary" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">team-a</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s">"0</span><span class="nv"> </span><span class="s">*/6</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*"</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">dryRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">timezone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Europe/London</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">selectors</span><span class="p">:</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">requireLabels</span><span class="p">:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">xp-clean.io/eligible</span><span class="p">:</span><span class="w"> </span><span class="s">"true"</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">globs</span><span class="p">:</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">namespaces</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"team-a-*"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"xp-test-*"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">xrdNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"*.dev.example.org"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">xrNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"test-*"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">gvks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"*.dev.example.org/*"</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># group/version; kind not required</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="nt">namespaceDeny</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"kube-system"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"crossplane-system"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="nt">ttl</span><span class="p">:</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nt">respectResourceTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">defaultTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168h</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nt">applyDefaultTTLIfMissing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nt">deletion</span><span class="p">:</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">instances-only</span><span class="w">             </span><span class="c1"># or all</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span><span class="nt">maxTracesPerRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nt">maxDeletesPerRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">orphanMode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">report</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">deletePaused</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="nt">allowXRDDeletion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="nt">waitTimeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30m</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="nt">observability</span><span class="p">:</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="nt">verbosity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">normal</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">  </span><span class="nt">notifications</span><span class="p">:</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">    </span><span class="c1"># … see Operations → Notifications</span>
+<p>Example shape with advanced fields filled in:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">team-a</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s">"0</span><span class="nv"> </span><span class="s">*/6</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*"</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">dryRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nt">timezone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Europe/London</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">selectors</span><span class="p">:</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">requireLabels</span><span class="p">:</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">xp-clean.io/eligible</span><span class="p">:</span><span class="w"> </span><span class="s">"true"</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">globs</span><span class="p">:</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">namespaces</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"team-a-*"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"xp-test-*"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">xrdNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"*.dev.example.org"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="nt">xrNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"test-*"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">gvks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"*.dev.example.org/*"</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># group/version; kind not required</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="nt">namespaceDeny</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"kube-system"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"crossplane-system"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="nt">ttl</span><span class="p">:</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="nt">respectResourceTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">  </span><span class="nt">defaultTTL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168h</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="nt">applyDefaultTTLIfMissing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="nt">deletion</span><span class="p">:</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">trace</span><span class="w">                       </span><span class="c1"># or roots (default)</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">instances-only</span><span class="w">             </span><span class="c1"># or all</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">  </span><span class="nt">wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="nt">waitTimeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30m</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="nt">maxTracesPerRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">  </span><span class="nt">maxDeletesPerRun</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="nt">orphanMode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">report</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">  </span><span class="nt">deletePaused</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">  </span><span class="nt">allowXRDDeletion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="nt">observability</span><span class="p">:</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">  </span><span class="nt">verbosity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">normal</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">  </span><span class="nt">notifications</span><span class="p">:</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="c1"># … see Operations → Notifications</span>
 </code></pre></div>
 <p>Audit events go to <strong>stdout</strong> JSON only for now — no audit ConfigMap or object-storage retention sink.</p>
 <h2 id="rbac-note">RBAC note<a class="headerlink" href="#rbac-note" title="Permanent link">&para;</a></h2>
-<p>Lab / backend installs may use broad reader/deleter ClusterRoles for now; tighten later. Prefer installing into the dedicated <code>xp-clean</code> namespace (Helm default when the chart lands).</p>
+<p>Lab / backend installs may use broad reader/deleter ClusterRoles for now; tighten later. Prefer installing into the dedicated <code>xp-clean</code> namespace (Helm default).</p>
 <p>Next: <a href="../../operations/cleanup/">Cleanup operations</a> for safety gates and the run flow, or <a href="../../architecture/">Architecture</a> for diagrams of how the runner is wired.</p>
 
 

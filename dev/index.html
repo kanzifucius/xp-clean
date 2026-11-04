@@ -1202,11 +1202,11 @@
 <p>It targets <strong>v2-native</strong> stacks only (<strong>Namespaced</strong> and modern <strong>Cluster</strong> XRs). <strong>LegacyCluster claims are not supported</strong>: there is no claim discovery or deletion path.</p>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Discover</strong> CompositeResourceDefinitions and build parent→child <strong>traces</strong> (XR → <code>spec.crossplane.resourceRefs</code> → children; nested XRs supported).</li>
-<li><strong>Select</strong> eligible stacks with <strong>labels and/or glob patterns</strong> (AND when both are set). Namespace alone never implies eligibility.</li>
-<li><strong>Plan</strong> deletions under configurable <code>deletion.scope</code>: <code>instances-only</code> (default) or <code>all</code>.</li>
-<li><strong>Execute</strong> safely — dry-run by default, budgets, skip paused resources, never strip Crossplane finalizers.</li>
-<li><strong>Notify</strong> (optional) via Microsoft Teams Workflows on run start / finish / failure.</li>
+<li><strong>Discover</strong> CompositeResourceDefinitions and select <strong>highest-parent</strong> XRs (roots mode). Full parent→child <strong>traces</strong> are opt-in (<code>--mode=trace</code>).</li>
+<li><strong>Select</strong> eligible stacks with <strong>labels</strong> (day-1) and/or <strong>glob patterns</strong> (advanced). Namespace alone never implies eligibility.</li>
+<li><strong>Plan</strong> with <code>xp-clean run --once</code> — dry-run by default (<code>deletion.mode: roots</code>, <code>deletion.scope: instances-only</code>).</li>
+<li><strong>Execute</strong> only with <code>--apply</code> and policy <code>dryRun: false</code> (foreground Delete; <code>--wait</code> opt-in); skip paused resources; never strip Crossplane finalizers.</li>
+<li><strong>Notify</strong> (optional, advanced) via Microsoft Teams Workflows on run start / finish / failure.</li>
 </ol>
 <h2 id="where-to-start">Where to start<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
 <div class="doc-map">

@@ -1230,21 +1230,25 @@
 <p>How a planned run stays safe once eligibility has selected stacks. Matching rules themselves are covered in <a href="../../concepts/policy/">Policy and eligibility</a>.</p>
 <h2 id="safety-gates">Safety gates<a class="headerlink" href="#safety-gates" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Dry-run by default</strong> — planner dry-run; live deletes need policy <code>dryRun: false</code> <strong>and</strong> <code>--dry-run=false</code>.</li>
+<li><strong>Dry-run by default</strong> — <code>run --once</code> always plans first; live deletes need policy <code>dryRun: false</code> <strong>and</strong> <code>--apply</code> (compatibility: <code>--dry-run=false</code>).</li>
+<li><strong>Roots by default</strong> — <code>deletion.mode: roots</code> plans highest-parent XRs only; opt in to full trees with <code>mode: trace</code> / <code>--mode=trace</code>.</li>
+<li><strong>Foreground deletes</strong> — live Deletes always use <code>DeletionPropagation=Foreground</code>.</li>
+<li><strong>Wait is opt-in</strong> — default is no poll; <code>--wait</code> / <code>deletion.wait: true</code> honours <code>waitTimeout</code> and stuck-finalizer audit.</li>
 <li><strong>Paused resources</strong> — skipped by default (<code>crossplane.io/paused</code>) unless <code>deletePaused: true</code>.</li>
-<li><strong>Keep label</strong> — <code>xp-clean.io/keep=true</code> skips the whole trace.</li>
-<li><strong>Budgets</strong> — <code>maxTracesPerRun</code> / <code>maxDeletesPerRun</code>.</li>
+<li><strong>Keep label</strong> — <code>xp-clean.io/keep=true</code> skips the whole stack.</li>
+<li><strong>Budgets</strong> — advanced: <code>maxTracesPerRun</code> / <code>maxDeletesPerRun</code>.</li>
 <li><strong>Finalizers</strong> — Xp-clean never strips Crossplane finalizers; cloud objects are deleted by Crossplane’s own controllers.</li>
 <li><strong>Claims / LegacyCluster</strong> — out of scope; XR-only / v2-native path.</li>
-<li><strong>Orphans</strong> — <code>orphanMode: report</code> (MVP) surfaces orphans without inventing parallel ownership.</li>
+<li><strong>Orphans</strong> — advanced: <code>orphanMode: report</code> (MVP) surfaces orphans without inventing parallel ownership.</li>
 </ul>
 <h2 id="run-flow-summary">Run flow (summary)<a class="headerlink" href="#run-flow-summary" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>discover XRDs / XRs
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  → match labels/globs + TTL
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  → build traces (parent→child)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  → highest parents (roots mode) OR build full traces (trace mode)
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  → plan deletions (scope + gates)
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  → execute (unless dry-run)
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  → audit JSON on stdout (+ optional Teams notify)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  → execute only with --apply and policy dryRun: false
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>       (foreground Delete; optional --wait poll)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  → audit JSON on stdout (+ optional Teams notify)
 </code></pre></div>
 <p>Visual walkthrough: <a href="../../architecture/workflow/">Cleanup workflow</a>.</p>
 <h2 id="exit-behaviour">Exit behaviour<a class="headerlink" href="#exit-behaviour" title="Permanent link">&para;</a></h2>

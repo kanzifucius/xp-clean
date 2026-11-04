@@ -1661,7 +1661,7 @@
 <tr>
 <td><code>dryRun</code></td>
 <td><code>true</code></td>
-<td>Passed as <code>--dry-run</code> on the CronJob / manager</td>
+<td>When <code>false</code>, CronJob / manager get <code>--apply</code></td>
 </tr>
 <tr>
 <td><code>cronjob.schedule</code></td>
@@ -1690,7 +1690,7 @@
 </tr>
 </tbody>
 </table>
-<p>Live deletes need <code>dryRun: false</code> in <strong>both</strong> chart values and the policy ConfigMap document. Edit selectors on the sample policy before enabling deletes. Full reference: the chart <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md"><code>README.md</code></a> and <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml"><code>values.yaml</code></a>.</p>
+<p>Live deletes need chart <code>dryRun: false</code> (passes <code>--apply</code>) <strong>and</strong> policy ConfigMap <code>dryRun: false</code>. Edit label selectors on the sample policy before enabling deletes. Full reference: the chart <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md"><code>README.md</code></a> and <a href="https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml"><code>values.yaml</code></a>.</p>
 <h2 id="maintainer-ghcr-visibility">Maintainer: GHCR visibility<a class="headerlink" href="#maintainer-ghcr-visibility" title="Permanent link">&para;</a></h2>
 <p><strong>Locked decision (2026-11-01):</strong> keep <code>ghcr.io/kanzifucius/xp-clean</code> <strong>public</strong> (anonymous pull). Do <strong>not</strong> delete the package or republish it as private.</p>
 <p>Package page: <a href="https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean">ghcr.io/kanzifucius/xp-clean</a>. GitHub’s Container registry does not allow switching an already-public package back to private in Package settings (<a href="https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility">docs</a>); that constraint is moot under the locked public preference.</p>

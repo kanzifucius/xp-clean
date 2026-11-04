@@ -1094,7 +1094,7 @@
 
 
 <h1 id="cleanup-workflow">Cleanup workflow<a class="headerlink" href="#cleanup-workflow" title="Permanent link">&para;</a></h1>
-<p>One <code>run --once</code> pass: load policy → discover → build traces → plan → execute (dry-run gate) → audit → notify finished, with AroundRun started wrap.</p>
+<p>One <code>run --once</code> pass: load policy → discover → roots (or opt-in full traces) → plan → execute only with <code>--apply</code> and policy <code>dryRun: false</code> (foreground Delete; optional <code>--wait</code>) → audit → notify finished, with AroundRun started wrap.</p>
 <div class="archify-embed" markdown="0">
 <iframe src="../cleanup-run-once.html" title="Xp-clean cleanup run-once workflow" loading="lazy" referrerpolicy="no-referrer"></iframe>
 </div>
