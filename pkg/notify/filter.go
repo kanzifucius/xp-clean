@@ -67,10 +67,11 @@ type Filtering struct {
 	Filter Filter
 }
 
-// Notify implements Notifier.
+// Notify implements Notifier. Returns ErrSkipped when the event is filtered out
+// or Inner is nil, so callers can tell skip apart from a successful delivery.
 func (f Filtering) Notify(ctx context.Context, ev Event) error {
 	if f.Inner == nil || !f.Filter.ShouldNotify(ev) {
-		return nil
+		return ErrSkipped
 	}
 	return f.Inner.Notify(ctx, ev)
 }

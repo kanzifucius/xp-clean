@@ -86,6 +86,12 @@ func flagChanged(cmd *cobra.Command, name string) bool {
 	return false
 }
 
+// Verbose reports whether the user opted into detailed CLI output (-v or
+// --log-level below error). Quiet run summaries and audit JSON gating use this.
+func (g *Global) Verbose() bool {
+	return g.verbose()
+}
+
 func (g *Global) verbose() bool {
 	if g.Verbosity > 0 {
 		return true

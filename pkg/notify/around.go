@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,20 +19,21 @@ type RunMeta struct {
 }
 
 // AroundRun notifies started / finished / failed around fn without altering fn's result.
-// Notify errors are returned separately via onNotifyErr (may be nil); the cleanup
-// error from fn is always returned as the second return value.
+// onNotify receives each delivery attempt: err==nil means ok; other errors are
+// delivery failures. Intentional skips (ErrSkipped) do not invoke onNotify.
+// The cleanup error from fn is always returned as the second return value.
 func AroundRun(
 	ctx context.Context,
 	n Notifier,
 	meta RunMeta,
 	fn func(context.Context) (cleanup.RunResult, error),
-	onNotifyErr func(error),
+	onNotify func(kind EventKind, err error),
 ) (cleanup.RunResult, error) {
 	if n == nil {
 		n = Noop{}
 	}
-	if onNotifyErr == nil {
-		onNotifyErr = func(error) {}
+	if onNotify == nil {
+		onNotify = func(EventKind, error) {}
 	}
 	runID := meta.RunID
 	if runID == "" {
@@ -47,26 +49,31 @@ func AroundRun(
 		Scope:     meta.Scope,
 		StartedAt: startedAt,
 	}
-	if err := safeNotify(ctx, n, startEv); err != nil {
-		onNotifyErr(fmt.Errorf("notify started: %w", err))
-	}
+	reportNotify(onNotify, KindStarted, safeNotify(ctx, n, startEv))
 
 	result, runErr := fn(ctx)
 	finishedAt := time.Now().UTC()
 
 	if runErr != nil {
 		failEv := EventFromResult(KindFailed, meta, runID, startedAt, finishedAt, result, runErr)
-		if err := safeNotify(ctx, n, failEv); err != nil {
-			onNotifyErr(fmt.Errorf("notify failed: %w", err))
-		}
+		reportNotify(onNotify, KindFailed, safeNotify(ctx, n, failEv))
 		return result, runErr
 	}
 
 	finEv := EventFromResult(KindFinished, meta, runID, startedAt, finishedAt, result, nil)
-	if err := safeNotify(ctx, n, finEv); err != nil {
-		onNotifyErr(fmt.Errorf("notify finished: %w", err))
-	}
+	reportNotify(onNotify, KindFinished, safeNotify(ctx, n, finEv))
 	return result, nil
+}
+
+func reportNotify(onNotify func(EventKind, error), kind EventKind, err error) {
+	if errors.Is(err, ErrSkipped) {
+		return
+	}
+	if err != nil {
+		onNotify(kind, fmt.Errorf("notify %s: %w", kind, err))
+		return
+	}
+	onNotify(kind, nil)
 }
 
 // EventFromResult builds an Event from a RunResult (and optional hard error).

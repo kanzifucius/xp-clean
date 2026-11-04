@@ -66,8 +66,8 @@ flags for those will land with the CRD.`,
 				}
 				_, err = notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
 					return runner.RunOnce(ctx, clipolicy.ToPolicyView(p))
-				}, func(nerr error) {
-					g.Logger.Info("notify warning", "err", nerr)
+				}, func(kind notify.EventKind, nerr error) {
+					options.LogNotifyResult(g.Logger, cmd.ErrOrStderr(), p.Name, kind, nerr)
 				})
 				return err
 			}

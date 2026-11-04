@@ -25,7 +25,7 @@ Unless the human opts in otherwise:
 | Propagation | Live Deletes use Kubernetes **foreground** propagation (built-in; not a flag) |
 | Wait | **No wait** after delete; `--wait` is opt-in |
 
-Interactive CLI output is quiet by default (command results only). Use `-v` / `--log-level` only when debugging.
+Interactive CLI output is quiet by default (compact would-delete summary on `run`; no audit JSON). Use `-v` / `--log-level` for audit JSON and full stack/trace detail.
 
 ## GVK globs (`--gvk-glob`)
 

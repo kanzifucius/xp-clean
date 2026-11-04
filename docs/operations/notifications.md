@@ -1,6 +1,6 @@
 # Notifications
 
-Chat summaries sit **beside** stdout audit JSON and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
+Chat summaries sit **beside** the CLI summary / audit JSON (when enabled) and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
 
 MVP sink: **Microsoft Teams Workflows**. Slack shares the multi-sink schema but is not implemented yet.
 
@@ -55,12 +55,12 @@ Finished and dry-run finished cards keep the FactSet counts and add an object li
 
 Each row is `Kind namespace/name — reason` (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit (for example `instance_root`); the notify layer does not invent eligibility policy.
 
-**Truncation:** at most **15** objects are included on the Event / card (`notify.MaxObjectsInEvent`) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends `… and N more (see Open logs)`. Full per-object detail remains on stdout audit JSON.
+**Truncation:** at most **15** objects are included on the Event / card (`notify.MaxObjectsInEvent`) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends `… and N more (see Open logs)`. Full per-object detail remains in the `run` summary or stdout audit JSON (`-v` / `manager`).
 
 Slack sinks share the same `Event.Objects` fields when implemented; MVP Slack remains unimplemented and counts-oriented.
 
 ## Failure isolation
 
-Notify failures are logged and ignored for exit codes. Missing webhook config is a noop. Partial multi-sink failure does not fail cleanup. Audit JSON remains authoritative for what was deleted.
+Each delivery attempt prints a short stderr status (`notify started: ok`, `notify finished: failed: …`) and a structured log line. Failures use logr **Error** (visible under quiet CLI); successes use logr **Info** (needs `-v` / manager’s info default) plus the stderr line. Intentional skips (disabled, filtered, or no webhook) stay silent. Notify failures never change cleanup exit codes. Partial multi-sink failure does not fail cleanup. The `run` summary / audit JSON remains authoritative for what was deleted.
 
 Sequence diagram: [Teams sequence](../architecture/sequence.md).

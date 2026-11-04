@@ -48,10 +48,10 @@ func Build(n conf.NotificationsResolved) (notify.Notifier, error) {
 		}
 	}
 
-	inner := notify.Notifier(notify.Noop{})
+	inner := notify.Notifier(notify.Skipped{})
 	switch len(sinks) {
 	case 0:
-		// enabled but no usable webhook — noop
+		// enabled but no usable webhook — skip (do not report false "ok")
 	case 1:
 		inner = sinks[0]
 	default:

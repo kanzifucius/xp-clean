@@ -148,11 +148,11 @@ Sample file document (for `--config` only): [`config/samples/cleanuppolicy.yaml`
 | `--notify`, `--notify-on-dry-run` | Override `notifications.enabled` / `onDryRun` |
 | `--kubeconfig`, `--context`, `-n` | kubectl-style access; `-n` is for `debug trace` only (**rejected** on `run`/`plan`) |
 
-Audit events go to **stdout** JSON only for now — no audit ConfigMap / object-storage retention sink.
+Audit events are stdout JSON when `run` is verbose (`-v` / `--log-level`) or under `manager`; quiet `run` prints a human summary only. No audit ConfigMap / object-storage retention sink for now.
 
 ### Run notification hooks (Teams Workflows)
 
-Chat summaries sit beside audit JSON and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
+Chat summaries sit beside the CLI summary / audit JSON (when enabled) and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
 
 1. In Teams, create a **Workflow** (platform-team or channel-owner owned — both are valid; prefer co-owners) with trigger **When a Teams webhook request is received**, then **Post card in a chat or channel**.
 2. Copy the Workflow callback URL into a Kubernetes Secret (or local env) as `XP_CLEAN_TEAMS_WEBHOOK_URL`. Never commit the URL to git or put it in the ConfigMap policy body.
@@ -185,7 +185,7 @@ xp-clean version [-o short|json|yaml]
 xp-clean completion bash|zsh|fish|powershell
 ```
 
-`run --once` is the day-to-day command (dry-run plan by default). `plan` is a deprecated machine-output wrapper. `debug trace` inspects one tree (`-n` only there). Logging uses zap/logr end-to-end, but interactive CLI commands are quiet by default (error-only on stderr). Use `-v=1` / `--log-level=info` for detail (`manager` defaults to info). Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `debug trace -o json|yaml`, audit JSON on `run`) stays on stdout.
+`run --once` is the day-to-day command (dry-run plan by default). `plan` is a deprecated machine-output wrapper. `debug trace` inspects one tree (`-n` only there). Logging uses zap/logr end-to-end, but interactive CLI commands are quiet by default (error-only on stderr; `run` prints a compact would-delete summary). Use `-v=1` / `--log-level=info` for detail including stdout audit JSON and full stack/trace listings (`manager` defaults to info and always audits). Encoder flags: `--zap-devel`, `--zap-encoder`. Machine plan output: `plan -o json|yaml`.
 
 Exit codes: `0` success; `1` runtime failure; `2` usage/validation; `3` blocked plans with `--fail-on-blocked`.
 

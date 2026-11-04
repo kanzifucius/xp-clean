@@ -44,7 +44,20 @@ Root `xp-clean trace` remains as a **hidden** compatibility alias of `debug trac
 | `-v` / `--v` | Opt-in log verbosity: `0` error-only (default), `1` info, `2+` debug |
 | `--log-level` | Zap level on stderr (`debug\|info\|warn\|error`); default **`error`** for interactive CLI. Alias: `--zap-log-level` |
 
-Logging stays on **zap/logr** end-to-end, but interactive commands (`run`, `plan`, `debug trace`, `version`) are **quiet by default**: only command results on stdout and real failures on stderr. Pass `-v=1` (or `--log-level=info`) to restore detail. `manager` defaults to **info**. Client-go / discovery warning noise is muted unless verbose. Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `debug trace -o json|yaml`, audit JSON on `run`) stays on **stdout**.
+Logging stays on **zap/logr** end-to-end, but interactive commands (`run`, `plan`, `debug trace`, `version`) are **quiet by default**: only command results on stdout and real failures on stderr. Pass `-v=1` (or `--log-level=info`) to restore detail. `manager` defaults to **info**. Client-go / discovery warning noise is muted unless verbose. Encoder flags: `--zap-devel`, `--zap-encoder`.
+
+### `run` output
+
+Default `run --once` (roots + instances-only) prints a compact human summary on **stdout**:
+
+```text
+policy=<name> dryRun=<bool> mode=roots scope=instances-only
+would delete N
+  <Kind> <namespace>/<name>
+  …
+```
+
+No per-object audit JSON, no `trace …` dumps, and no `stack … steps=1` / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with `-v=1` (or `--log-level=info`). `mode=trace`, `scope=all`, and multi-step plans keep detailed stack listings without requiring `-v`. Machine-readable DeletePlans remain on `plan -o json|yaml`. Scheduled `manager` runs still emit audit JSON on stdout.
 
 ## Exit codes
 
