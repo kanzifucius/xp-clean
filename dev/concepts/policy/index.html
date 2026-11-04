@@ -1645,7 +1645,7 @@
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="c1"># … see Operations → Notifications</span>
 </code></pre></div>
-<p>Audit events go to <strong>stdout</strong> JSON only for now — no audit ConfigMap or object-storage retention sink.</p>
+<p>Audit events are JSON lines on <strong>stdout</strong> when <code>run</code> is verbose (<code>-v</code> / <code>--log-level</code>) or under <code>manager</code>; quiet <code>run</code> prints a human summary only. No audit ConfigMap or object-storage retention sink for now.</p>
 <h2 id="rbac-note">RBAC note<a class="headerlink" href="#rbac-note" title="Permanent link">&para;</a></h2>
 <p>Lab / backend installs may use broad reader/deleter ClusterRoles for now; tighten later. Prefer installing into the dedicated <code>xp-clean</code> namespace (Helm default).</p>
 <p>Next: <a href="../../operations/cleanup/">Cleanup operations</a> for safety gates and the run flow, or <a href="../../architecture/">Architecture</a> for diagrams of how the runner is wired.</p>

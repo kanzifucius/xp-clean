@@ -938,6 +938,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Flags worth knowing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1188,6 +1205,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Flags worth knowing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1356,7 +1390,16 @@
 </tr>
 </tbody>
 </table>
-<p>Logging stays on <strong>zap/logr</strong> end-to-end, but interactive commands (<code>run</code>, <code>plan</code>, <code>debug trace</code>, <code>version</code>) are <strong>quiet by default</strong>: only command results on stdout and real failures on stderr. Pass <code>-v=1</code> (or <code>--log-level=info</code>) to restore detail. <code>manager</code> defaults to <strong>info</strong>. Client-go / discovery warning noise is muted unless verbose. Encoder flags: <code>--zap-devel</code>, <code>--zap-encoder</code>. Machine output (<code>plan</code>, <code>debug trace -o json|yaml</code>, audit JSON on <code>run</code>) stays on <strong>stdout</strong>.</p>
+<p>Logging stays on <strong>zap/logr</strong> end-to-end, but interactive commands (<code>run</code>, <code>plan</code>, <code>debug trace</code>, <code>version</code>) are <strong>quiet by default</strong>: only command results on stdout and real failures on stderr. Pass <code>-v=1</code> (or <code>--log-level=info</code>) to restore detail. <code>manager</code> defaults to <strong>info</strong>. Client-go / discovery warning noise is muted unless verbose. Encoder flags: <code>--zap-devel</code>, <code>--zap-encoder</code>.</p>
+<h3 id="run-output"><code>run</code> output<a class="headerlink" href="#run-output" title="Permanent link">&para;</a></h3>
+<p>Default <code>run --once</code> (roots + instances-only) prints a compact human summary on <strong>stdout</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>policy=&lt;name&gt; dryRun=&lt;bool&gt; mode=roots scope=instances-only
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>would delete N
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  &lt;Kind&gt; &lt;namespace&gt;/&lt;name&gt; — &lt;reason&gt;
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  …
+</code></pre></div>
+<p>Each object line includes the planner reason (for example <code>instance_root</code>). The same <code>Kind namespace/name — reason</code> shape is used on Teams Adaptive Cards.</p>
+<p>No per-object audit JSON, no <code>trace …</code> dumps, and no <code>stack … steps=1</code> / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with <code>-v=1</code> (or <code>--log-level=info</code>). <code>mode=trace</code>, <code>scope=all</code>, and multi-step plans keep detailed stack listings without requiring <code>-v</code>. Machine-readable DeletePlans remain on <code>plan -o json|yaml</code>. Scheduled <code>manager</code> runs still emit audit JSON on stdout.</p>
 <h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

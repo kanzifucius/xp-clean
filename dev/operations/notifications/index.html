@@ -1249,7 +1249,7 @@
 
 
 <h1 id="notifications">Notifications<a class="headerlink" href="#notifications" title="Permanent link">&para;</a></h1>
-<p>Chat summaries sit <strong>beside</strong> stdout audit JSON and metrics. They wrap each <code>RunOnce</code> (started / finished / failed), use a short HTTP deadline, and <strong>never</strong> change cleanup results or exit codes.</p>
+<p>Chat summaries sit <strong>beside</strong> the CLI summary / audit JSON (when enabled) and metrics. They wrap each <code>RunOnce</code> (started / finished / failed), use a short HTTP deadline, and <strong>never</strong> change cleanup results or exit codes.</p>
 <p>MVP sink: <strong>Microsoft Teams Workflows</strong>. Slack shares the multi-sink schema but is not implemented yet.</p>
 <h2 id="decisions-locked">Decisions (locked)<a class="headerlink" href="#decisions-locked" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1332,10 +1332,10 @@
 </tbody>
 </table>
 <p>Each row is <code>Kind namespace/name — reason</code> (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit (for example <code>instance_root</code>); the notify layer does not invent eligibility policy.</p>
-<p><strong>Truncation:</strong> at most <strong>15</strong> objects are included on the Event / card (<code>notify.MaxObjectsInEvent</code>) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends <code>… and N more (see Open logs)</code>. Full per-object detail remains on stdout audit JSON.</p>
+<p><strong>Truncation:</strong> at most <strong>15</strong> objects are included on the Event / card (<code>notify.MaxObjectsInEvent</code>) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends <code>… and N more (see Open logs)</code>. Full per-object detail remains in the <code>run</code> summary or stdout audit JSON (<code>-v</code> / <code>manager</code>).</p>
 <p>Slack sinks share the same <code>Event.Objects</code> fields when implemented; MVP Slack remains unimplemented and counts-oriented.</p>
 <h2 id="failure-isolation">Failure isolation<a class="headerlink" href="#failure-isolation" title="Permanent link">&para;</a></h2>
-<p>Notify failures are logged and ignored for exit codes. Missing webhook config is a noop. Partial multi-sink failure does not fail cleanup. Audit JSON remains authoritative for what was deleted.</p>
+<p>Each delivery attempt prints a short stderr status (<code>notify started: ok</code>, <code>notify finished: failed: …</code>) and a structured log line. Failures use logr <strong>Error</strong> (visible under quiet CLI); successes use logr <strong>Info</strong> (needs <code>-v</code> / manager’s info default) plus the stderr line. Intentional skips (disabled, filtered, or no webhook) stay silent. Notify failures never change cleanup exit codes. Partial multi-sink failure does not fail cleanup. The <code>run</code> summary / audit JSON remains authoritative for what was deleted.</p>
 <p>Sequence diagram: <a href="../../architecture/sequence/">Teams sequence</a>.</p>
 
 
