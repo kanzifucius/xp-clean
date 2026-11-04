@@ -89,6 +89,8 @@ Matching uses **labels and/or glob patterns**. When both are set, an object must
 | GVK globs | **`group/version`** patterns (kind **not** required), e.g. `*.dev.example.org/*` |
 | Deny list | `namespaceDeny: [kube-system, crossplane-system]` |
 
+Day-1 ConfigMap samples stay **label-only** (no `globs.gvks`). To inject GVK globs without editing the policy document, pass repeatable CLI **`--gvk-glob`** on `run` / `plan` / `manager`. When the flag is set it **replaces** `selectors.globs.gvks` entirely; when omitted, the policy value (including none) is used. See [CLI](../cli.md).
+
 ### `mode: trace` and `scope: all`
 
 Prefer `deletion.mode: trace` when you need nested keep/paused visibility, orphan reporting detail, or definition-layer planning. `deletion.scope: all` deletes instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs `allowXRDDeletion: true`.

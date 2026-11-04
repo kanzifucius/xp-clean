@@ -27,6 +27,7 @@ type PolicyFlags struct {
 	FailOnBlocked   bool
 	Notify          bool
 	NotifyOnDryRun  bool
+	GVKGlobs        []string
 }
 
 // Bind registers --config / --dry-run / --scope / ConfigMap / notify flags on a command.
@@ -42,6 +43,7 @@ func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withLiveControls bool) {
 	fs.StringVar(&p.Mode, "mode", "", "deletion.mode override: roots|trace (default from policy, then roots)")
 	fs.BoolVar(&p.Wait, "wait", false, "wait for each delete to complete (honours deletion.waitTimeout / stuck-finalizer audit); default is no wait")
 	fs.StringVar(&p.Scope, "scope", "", "deletion.scope override: instances-only|all (default from policy, then instances-only)")
+	fs.StringArrayVar(&p.GVKGlobs, "gvk-glob", nil, "replace selectors.globs.gvks with this group/version glob (repeatable; when set, policy GVK globs are ignored)")
 	fs.BoolVar(&p.FailOnBlocked, "fail-on-blocked", false, "exit 3 when the run completed with blocked plans")
 	fs.BoolVar(&p.Notify, "notify", false, "override observability.notifications.enabled (webhook URL still from env)")
 	fs.BoolVar(&p.NotifyOnDryRun, "notify-on-dry-run", true, "override observability.notifications.onDryRun")
@@ -57,6 +59,7 @@ func (p *PolicyFlags) Overrides(fs *pflag.FlagSet, alwaysDryRun bool) policy.Fla
 		PolicyNamespace: p.PolicyNamespace,
 		Scope:           p.Scope,
 		Mode:            p.Mode,
+		GVKGlobs:        append([]string(nil), p.GVKGlobs...),
 		AlwaysDryRun:    alwaysDryRun,
 		// Day-to-day default: dry-run plan. Cleared by --apply / --dry-run=false
 		// (policy dryRun: false still required for live). Plan sets AlwaysDryRun.
