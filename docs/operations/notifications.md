@@ -55,7 +55,7 @@ Finished and dry-run finished cards keep the FactSet counts and add an object li
 
 Each row is `Kind namespace/name — reason` (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit and answer *why* the object was eligible — for example `instance_root; label:xp-clean.io/eligible=true+ttl_elapsed`, `instance_root; globs+expires-at`, or `instance_root; label:…+default_ttl`. The notify layer does not invent eligibility policy.
 
-Teams finished/failed cards use a full-bleed coloured banner header (`good` / `attention` / `warning` / `accent` / `emphasis`) so the status pops in the channel feed, with object lines in a nested emphasis block.
+Teams finished/failed cards use a full-bleed coloured banner header so the status pops in the channel feed: **finished = green** (`good`), **failed = red** (`attention`), started = blue (`accent`). Object lines sit in a nested emphasis block.
 
 **Truncation:** at most **15** objects are included on the Event / card (`notify.MaxObjectsInEvent`) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends `… and N more (see Open logs)`. Full per-object detail remains in the `run` summary or stdout audit JSON (`-v` / `manager`).
 

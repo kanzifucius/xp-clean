@@ -278,6 +278,7 @@ func titleFor(ev notify.Event) string {
 }
 
 // bannerStyle picks an Adaptive Card container style for the status banner.
+// Finished → green (good); failed → red (attention); started → blue (accent).
 func bannerStyle(ev notify.Event) string {
 	switch ev.Kind {
 	case notify.KindFailed:
@@ -285,12 +286,7 @@ func bannerStyle(ev notify.Event) string {
 	case notify.KindStarted:
 		return "accent"
 	default:
-		if ev.ErrorCount > 0 {
-			return "warning"
-		}
-		if ev.DryRun {
-			return "emphasis"
-		}
+		// KindFinished (live or dry-run, including partial) always greens the banner.
 		return "good"
 	}
 }
