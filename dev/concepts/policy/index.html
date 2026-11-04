@@ -1565,6 +1565,7 @@
 </tr>
 </tbody>
 </table>
+<p>Day-1 ConfigMap samples stay <strong>label-only</strong> (no <code>globs.gvks</code>). To inject GVK globs without editing the policy document, pass repeatable CLI <strong><code>--gvk-glob</code></strong> on <code>run</code> / <code>plan</code> / <code>manager</code>. When the flag is set it <strong>replaces</strong> <code>selectors.globs.gvks</code> entirely; when omitted, the policy value (including none) is used. See <a href="../../cli/">CLI</a>.</p>
 <h3 id="mode-trace-and-scope-all"><code>mode: trace</code> and <code>scope: all</code><a class="headerlink" href="#mode-trace-and-scope-all" title="Permanent link">&para;</a></h3>
 <p>Prefer <code>deletion.mode: trace</code> when you need nested keep/paused visibility, orphan reporting detail, or definition-layer planning. <code>deletion.scope: all</code> deletes instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs <code>allowXRDDeletion: true</code>.</p>
 <h3 id="orphan-modes-budgets-wait-notify-sinks">Orphan modes, budgets, wait, notify sinks<a class="headerlink" href="#orphan-modes-budgets-wait-notify-sinks" title="Permanent link">&para;</a></h3>

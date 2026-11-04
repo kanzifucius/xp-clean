@@ -1246,10 +1246,10 @@
 <h1 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h1>
 <p>Standalone Cobra binary <code>xp-clean</code>. kubectl plugin documentation is deferred — use the standalone CLI for now.</p>
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--fail-on-blocked] [-o json|yaml]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--gvk-glob G/V]… [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--gvk-glob G/V]… [--fail-on-blocked] [-o json|yaml]
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>xp-clean debug trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait]
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--gvk-glob G/V]…
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>xp-clean version [-o short|json|yaml]
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>xp-clean completion bash|zsh|fish|powershell
 </code></pre></div>
@@ -1320,6 +1320,10 @@
 <tr>
 <td><code>--scope</code> / <code>XP_CLEAN_SCOPE</code></td>
 <td><code>instances-only</code> (default) or <code>all</code></td>
+</tr>
+<tr>
+<td><code>--gvk-glob</code></td>
+<td>Repeatable <code>group/version</code> glob (same dialect as <code>selectors.globs.gvks</code>). When set, <strong>replaces</strong> policy GVK globs entirely (no merge). When omitted, policy globs (including none) are unchanged. Labels / TTL / other globs stay from policy</td>
 </tr>
 <tr>
 <td><code>--fail-on-blocked</code></td>
