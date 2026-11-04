@@ -660,6 +660,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cursor-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cursor skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#ci-tip" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1374,6 +1385,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cursor-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cursor skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#ci-tip" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1592,6 +1614,13 @@
 <p>If <code>~/.local/bin</code> is not on your <code>PATH</code>, the script prints a hint. Add it yourself (the installer does not rewrite shell rc files):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.local/bin:</span><span class="nv">$PATH</span><span class="s2">"</span>
 </code></pre></div>
+<h3 id="cursor-skill">Cursor skill<a class="headerlink" href="#cursor-skill" title="Permanent link">&para;</a></h3>
+<p>After the binary is on your <code>PATH</code>, install the embedded Cursor skill (teaches dry-run first, confirm before <code>--apply</code>, skinny eligibility, and <code>--gvk-glob</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>xp-clean<span class="w"> </span>skill<span class="w"> </span>install<span class="w">            </span><span class="c1"># ~/.cursor/skills/xp-clean/SKILL.md</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>xp-clean<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>--project<span class="w">  </span><span class="c1"># .cursor/skills/xp-clean/SKILL.md (git root / cwd)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>xp-clean<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>--force<span class="w">    </span><span class="c1"># overwrite</span>
+</code></pre></div>
+<p>v1 supports Cursor only (<code>-a/--agent cursor</code>).</p>
 <h3 id="ci-tip">CI tip<a class="headerlink" href="#ci-tip" title="Permanent link">&para;</a></h3>
 <p>For reproducible pipelines, prefer a <strong>pinned</strong> tag or <code>gh release download</code> of a specific archive over an unpinned pipe-to-bash.</p>
 <h3 id="manual-download">Manual download<a class="headerlink" href="#manual-download" title="Permanent link">&para;</a></h3>
@@ -1599,13 +1628,13 @@
 <h2 id="run-in-cluster-ghcr">Run in-cluster (GHCR)<a class="headerlink" href="#run-in-cluster-ghcr" title="Permanent link">&para;</a></h2>
 <p>Package page: <a href="https://github.com/kanzifucius/xp-clean/pkgs/container/xp-clean">ghcr.io/kanzifucius/xp-clean</a>.</p>
 <p>Pull without registry login:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/kanzifucius/xp-clean:v0.1.0-rc.1
 </code></pre></div>
 <p>In-cluster Deployments / CronJobs can omit <code>imagePullSecrets</code> for this image.</p>
 <p>If you consume a <strong>private fork</strong> of the package, authenticate and use an <code>imagePullSecret</code> whose token can <code>read:packages</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$CR_PAT</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>ghcr.io<span class="w"> </span>-u<span class="w"> </span>USERNAME<span class="w"> </span>--password-stdin
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/NAMESPACE/xp-clean:v0.1.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># PAT or fine-grained token with read:packages (SSO-authorise if the org requires it)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$CR_PAT</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>ghcr.io<span class="w"> </span>-u<span class="w"> </span>USERNAME<span class="w"> </span>--password-stdin
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/NAMESPACE/xp-clean:v0.1.0
 </code></pre></div>
 <p>Use the <strong>same SemVer tag</strong> for the CLI archive and the image (for example <code>v0.1.0</code>) so operators can correlate laptop and cluster versions.</p>
 <h2 id="helm-chart-in-cluster-cronjob">Helm chart (in-cluster CronJob)<a class="headerlink" href="#helm-chart-in-cluster-cronjob" title="Permanent link">&para;</a></h2>
@@ -1621,21 +1650,21 @@
 <p>There is <strong>no</strong> CleanupPolicy CRD in this chart. ConfigMaps remain the primary in-cluster policy surface.</p>
 <h3 id="install-from-ghcr-oci">Install from GHCR (OCI)<a class="headerlink" href="#install-from-ghcr-oci" title="Permanent link">&para;</a></h3>
 <p>On each SemVer git tag the release workflow packages the chart and pushes it to GHCR. Chart OCI tags are SemVer <strong>without</strong> a leading <code>v</code>; the default <code>image.tag</code> inside the package <strong>keeps</strong> <code>v</code> so it matches the published app image.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>--create-namespace
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>--create-namespace
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>helm<span class="w"> </span>show<span class="w"> </span>chart<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>helm<span class="w"> </span>template<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span>--namespace<span class="w"> </span>xp-clean
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>helm<span class="w"> </span>show<span class="w"> </span>chart<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>helm<span class="w"> </span>template<span class="w"> </span>xp-clean<span class="w"> </span>oci://ghcr.io/kanzifucius/charts/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">0</span>.1.0-rc.1<span class="w"> </span>--namespace<span class="w"> </span>xp-clean
 </code></pre></div>
 <p>The chart package (<code>ghcr.io/kanzifucius/charts/xp-clean</code>) and the app image package are both <strong>public</strong> — no <code>helm registry login</code> or <code>imagePullSecret</code> for the happy path. After the first chart push, confirm the new GHCR package is set <strong>Public</strong> in GitHub Packages (same operational step as the image).</p>
 <h3 id="install-from-a-repository-checkout">Install from a repository checkout<a class="headerlink" href="#install-from-a-repository-checkout" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--create-namespace<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>helm<span class="w"> </span>upgrade<span class="w"> </span>--install<span class="w"> </span>xp-clean<span class="w"> </span>./deploy/helm/xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--namespace<span class="w"> </span>xp-clean<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>--create-namespace<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>--set<span class="w"> </span>image.tag<span class="o">=</span>v0.1.0-rc.1
 </code></pre></div>
 <p>For a <strong>private fork</strong> image, create a docker-registry secret and pass <code>imagePullSecrets</code> (and set <code>image.repository</code> as needed). Source chart path: <a href="https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean"><code>deploy/helm/xp-clean</code></a>.</p>
 <h3 id="important-values">Important values<a class="headerlink" href="#important-values" title="Permanent link">&para;</a></h3>
@@ -1699,9 +1728,9 @@
 <li>Ensure <code>main</code> is green.</li>
 <li>Tag and push (do not create the Release in the UI):</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.1.0"</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0
 </code></pre></div>
 <ol>
 <li>Watch the <code>release</code> workflow; confirm GitHub Release assets, <code>docker pull ghcr.io/kanzifucius/xp-clean:v0.1.0</code>, and <code>helm show chart oci://ghcr.io/kanzifucius/charts/xp-clean --version 0.1.0</code>.</li>
