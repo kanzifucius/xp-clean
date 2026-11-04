@@ -38,14 +38,17 @@ const (
 
 // Node is one object in a trace DAG.
 type Node struct {
-	Ref        ObjectRef         `json:"ref"`
-	Kind       NodeKind          `json:"kind"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	Eligible   bool              `json:"eligible"`
-	Keep       bool              `json:"keep"`
-	ExpiresAt  *time.Time        `json:"expiresAt,omitempty"`
-	Paused     bool              `json:"paused"`
-	OrphanHint string            `json:"orphanHint,omitempty"`
+	Ref         ObjectRef         `json:"ref"`
+	Kind        NodeKind          `json:"kind"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Eligible    bool              `json:"eligible"`
+	Keep        bool              `json:"keep"`
+	ExpiresAt   *time.Time        `json:"expiresAt,omitempty"`
+	Paused      bool              `json:"paused"`
+	// MatchReason is the discover/match eligibility cause for the root XR
+	// (e.g. label:xp-clean.io/eligible=true+ttl_elapsed). Used for DeleteStep.Reason.
+	MatchReason string `json:"matchReason,omitempty"`
+	OrphanHint  string `json:"orphanHint,omitempty"`
 }
 
 // Edge links parent → child with a reason.

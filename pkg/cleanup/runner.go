@@ -134,13 +134,14 @@ func (r *Runner) RunOnce(ctx context.Context, policy PolicyView) (RunResult, err
 		if err != nil {
 			return result, err
 		}
-		// Mark root eligibility / keep / paused from candidate.
+		// Mark root eligibility / keep / paused / match reason from candidate.
 		for i := range tr.Nodes {
 			if tr.Nodes[i].Ref.Key() == tr.Root.Key() {
 				tr.Nodes[i].Eligible = root.Eligible
 				tr.Nodes[i].Keep = root.Keep
 				tr.Nodes[i].Paused = root.Paused
 				tr.Nodes[i].ExpiresAt = root.ExpiresAt
+				tr.Nodes[i].MatchReason = root.Reason
 			}
 		}
 		if policy.Deletion.Scope == ScopeAll && attacher != nil {

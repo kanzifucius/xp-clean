@@ -83,7 +83,10 @@ func EvaluateXR(xr *unstructured.Unstructured, info XRDInfo, sel match.Selectors
 	if !exp.Expired {
 		c.Reason = "ttl_not_elapsed"
 		c.Eligible = false
+		return c, nil
 	}
+	// Eligible: keep selector cause and append TTL fragment when it contributed.
+	c.Reason = match.JoinEligibility(res.Reason, match.TTLElapsedReason(exp))
 	return c, nil
 }
 

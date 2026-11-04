@@ -54,8 +54,33 @@ func TestBuildPlanInstancesOnly(t *testing.T) {
 	if plan.Steps[0].Kind != trace.NodeXR {
 		t.Fatalf("want XR delete, got %s", plan.Steps[0].Kind)
 	}
+	if plan.Steps[0].Reason != "instance_root" {
+		t.Fatalf("empty MatchReason must keep mode tag only, got %q", plan.Steps[0].Reason)
+	}
 	if !plan.DryRun {
 		t.Fatal("expected dry-run plan")
+	}
+}
+
+func TestBuildPlanInstanceReasonIncludesEligibility(t *testing.T) {
+	tr := sampleTrace()
+	tr.Nodes[0].MatchReason = "label:xp-clean.io/eligible=true+ttl_elapsed"
+	plan := cleanup.BuildPlan(tr, cleanup.DefaultDeletionConfig(), true)
+	if len(plan.Steps) != 1 {
+		t.Fatalf("want 1 step, got %#v", plan.Steps)
+	}
+	want := "instance_root; label:xp-clean.io/eligible=true+ttl_elapsed"
+	if plan.Steps[0].Reason != want {
+		t.Fatalf("Reason=%q want %q", plan.Steps[0].Reason, want)
+	}
+}
+
+func TestInstanceDeleteReason(t *testing.T) {
+	if got := cleanup.InstanceDeleteReason(""); got != "instance_root" {
+		t.Fatalf("got %q", got)
+	}
+	if got := cleanup.InstanceDeleteReason("globs+expires-at"); got != "instance_root; globs+expires-at" {
+		t.Fatalf("got %q", got)
 	}
 }
 

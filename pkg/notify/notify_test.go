@@ -35,10 +35,12 @@ func TestTruncateErrors(t *testing.T) {
 }
 
 func TestFormatObjectLine(t *testing.T) {
+	reason := "instance_root; label:xp-clean.io/eligible=true+ttl_elapsed"
 	got := notify.FormatObjectLine(notify.ObjectSummary{
-		Kind: "XDemo", Namespace: "demo", Name: "app", Reason: "instance_root",
+		Kind: "XDemo", Namespace: "demo", Name: "app", Reason: reason,
 	})
-	if got != "XDemo demo/app — instance_root" {
+	want := "XDemo demo/app — " + reason
+	if got != want {
 		t.Fatalf("%q", got)
 	}
 	got = notify.FormatObjectLine(notify.ObjectSummary{Kind: "Composition", Name: "c1", Reason: "definition_scope_all"})
@@ -48,5 +50,11 @@ func TestFormatObjectLine(t *testing.T) {
 	got = notify.FormatObjectLine(notify.ObjectSummary{Kind: "XDemo", Namespace: "ns", Name: "bare"})
 	if got != "XDemo ns/bare" {
 		t.Fatalf("empty reason must omit separator: %q", got)
+	}
+	got = notify.FormatObjectLine(notify.ObjectSummary{
+		Kind: "XDemo", Namespace: "ns", Name: "g", Reason: "instance_root; globs+expires-at",
+	})
+	if got != "XDemo ns/g — instance_root; globs+expires-at" {
+		t.Fatalf("%q", got)
 	}
 }

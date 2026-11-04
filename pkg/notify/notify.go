@@ -20,7 +20,8 @@ const (
 )
 
 // ObjectSummary is a chat-safe identity + planner reason for one delete target.
-// Reason is copied from the planner/audit (e.g. instance_root); notify does not invent policy semantics.
+// Reason is copied from the planner/audit (e.g. instance_root; label:…+ttl_elapsed);
+// notify does not invent policy semantics.
 type ObjectSummary struct {
 	APIVersion string
 	Kind       string
@@ -135,7 +136,7 @@ func TruncateObjects(objs []ObjectSummary, max int) []ObjectSummary {
 }
 
 // FormatObjectLine renders Kind namespace/name — reason for quiet CLI and chat cards.
-// Reason is the planner/audit field (e.g. instance_root); omitted when empty.
+// Reason is the planner/audit field (eligibility cause); omitted when empty.
 func FormatObjectLine(o ObjectSummary) string {
 	id := strings.TrimSpace(o.Kind)
 	if id == "" {

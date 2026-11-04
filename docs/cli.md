@@ -57,9 +57,9 @@ would delete N
   …
 ```
 
-Each object line includes the planner reason (for example `instance_root`). The same `Kind namespace/name — reason` shape is used on Teams Adaptive Cards.
+Each object line includes the planner delete reason: mode tag plus eligibility cause (for example `instance_root; label:xp-clean.io/eligible=true+ttl_elapsed`). The same `Kind namespace/name — reason` shape is used on Teams Adaptive Cards and in audit JSON `reason` fields.
 
-No per-object audit JSON, no `trace …` dumps, and no `stack … steps=1` / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with `-v=1` (or `--log-level=info`). `mode=trace`, `scope=all`, and multi-step plans keep detailed stack listings without requiring `-v`. Machine-readable DeletePlans remain on `plan -o json|yaml`. Scheduled `manager` runs still emit audit JSON on stdout.
+No per-object audit JSON, no `trace …` dumps, and no `stack … steps=1` / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with `-v=1` (or `--log-level=info`). Quiet summary (eligibility reasons included) is the default without `-v`. `mode=trace`, `scope=all`, and multi-step plans keep detailed stack listings without requiring `-v`. Machine-readable DeletePlans remain on `plan -o json|yaml`. Scheduled `manager` runs still emit audit JSON on stdout.
 
 ## Exit codes
 

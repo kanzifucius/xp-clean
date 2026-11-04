@@ -2,6 +2,7 @@ package cleanup
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kanzifucius/xp-clean/pkg/trace"
 )
@@ -11,7 +12,9 @@ type DeleteStep struct {
 	Ref    trace.ObjectRef `json:"ref"`
 	Kind   trace.NodeKind  `json:"kind"`
 	Action string          `json:"action"` // delete
-	Reason string          `json:"reason"`
+	// Reason explains why this object is deleted. For instance roots this is
+	// typically "instance_root; <eligibility>" (e.g. instance_root; label:…+ttl_elapsed).
+	Reason string `json:"reason"`
 }
 
 // DeletePlan is the ordered set of deletes for one trace.
@@ -59,7 +62,7 @@ func BuildPlanWithRemaining(t trace.Trace, cfg DeletionConfig, dryRun bool, rema
 		Ref:    rootNode.Ref,
 		Kind:   rootNode.Kind,
 		Action: "delete",
-		Reason: "instance_root",
+		Reason: InstanceDeleteReason(rootNode.MatchReason),
 	})
 
 	if cfg.Scope != ScopeAll {
@@ -87,6 +90,17 @@ func BuildPlanWithRemaining(t trace.Trace, cfg DeletionConfig, dryRun bool, rema
 	}
 
 	return plan
+}
+
+// InstanceDeleteReason combines the planner mode tag with the eligibility cause.
+// Examples: "instance_root", "instance_root; label:xp-clean.io/eligible=true+ttl_elapsed".
+func InstanceDeleteReason(matchReason string) string {
+	const mode = "instance_root"
+	matchReason = strings.TrimSpace(matchReason)
+	if matchReason == "" {
+		return mode
+	}
+	return mode + "; " + matchReason
 }
 
 func findNode(t trace.Trace, ref trace.ObjectRef) (trace.Node, bool) {
