@@ -54,6 +54,7 @@ definitions+instances. --namespace / -n is valid only on debug trace.`,
 		newDebugCommand(g),
 		newHiddenRootTraceCommand(g),
 		newManagerCommand(g),
+		newSkillCommand(),
 		newVersionCommand(),
 	)
 
