@@ -76,6 +76,13 @@ func TestRunnerDryRunMemoryBackend(t *testing.T) {
 	if !res.Plans[0].DryRun || len(res.Plans[0].Steps) != 1 {
 		t.Fatalf("plan %#v", res.Plans[0])
 	}
+	wantReason := "instance_root; label:xp-clean.io/eligible=true+globs"
+	if res.Plans[0].Steps[0].Reason != wantReason {
+		t.Fatalf("delete reason=%q want %q", res.Plans[0].Steps[0].Reason, wantReason)
+	}
+	if res.Traces[0].Nodes[0].MatchReason != "label:xp-clean.io/eligible=true+globs" {
+		t.Fatalf("MatchReason=%q", res.Traces[0].Nodes[0].MatchReason)
+	}
 	// Object still present after dry-run.
 	if _, err := mem.Get(context.Background(), res.Plans[0].Steps[0].Ref); err != nil {
 		t.Fatalf("dry-run should not delete: %v", err)

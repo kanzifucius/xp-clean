@@ -29,8 +29,8 @@ func TestBuildPayloadGoldenShape(t *testing.T) {
 		Deleted:    0,
 		Skipped:    14,
 		Objects: []notify.ObjectSummary{
-			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-a", Reason: "instance_root"},
-			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-b", Reason: "instance_root"},
+			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-a", Reason: "instance_root; label:xp-clean.io/eligible=true+ttl_elapsed"},
+			{APIVersion: "example.org/v1", Kind: "XDemo", Namespace: "demo", Name: "app-b", Reason: "instance_root; globs+expires-at"},
 		},
 		ObjectsTotal: 16,
 		LogURL:       "https://logs.example/search?q=01JTEST",
@@ -60,19 +60,74 @@ func TestBuildPayloadGoldenShape(t *testing.T) {
 	}
 	s := string(raw)
 	for _, want := range []string{
-		"xp-clean: run finished",
+		"XP-CLEAN",
+		"Dry-run finished",
 		"test-stacks",
+		`"style":"emphasis"`,
+		`"bleed":true`,
+		`"width":"Full"`,
 		"01JTEST",
 		"Open logs",
 		"No objects deleted",
 		"Would delete",
-		"XDemo demo/app-a — instance_root",
-		"XDemo demo/app-b — instance_root",
+		"XDemo demo/app-a — instance_root; label:xp-clean.io/eligible=true+ttl_elapsed",
+		"XDemo demo/app-b — instance_root; globs+expires-at",
 		"… and 14 more (see Open logs)",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("payload missing %q:\n%s", want, s)
 		}
+	}
+}
+
+func TestBuildPayloadBannerStyles(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		ev    notify.Event
+		style string
+		title string
+	}{
+		{
+			name:  "failed attention",
+			ev:    notify.Event{Kind: notify.KindFailed, Policy: "p"},
+			style: "attention",
+			title: "Run failed",
+		},
+		{
+			name:  "started accent",
+			ev:    notify.Event{Kind: notify.KindStarted, Policy: "p"},
+			style: "accent",
+			title: "Run started",
+		},
+		{
+			name:  "live success good",
+			ev:    notify.Event{Kind: notify.KindFinished, Policy: "p"},
+			style: "good",
+			title: "Run finished",
+		},
+		{
+			name:  "partial warning",
+			ev:    notify.Event{Kind: notify.KindFinished, Policy: "p", ErrorCount: 2},
+			style: "warning",
+			title: "Run finished with errors",
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			raw, err := teams.BuildPayload(tt.ev)
+			if err != nil {
+				t.Fatal(err)
+			}
+			s := string(raw)
+			if !strings.Contains(s, `"style":"`+tt.style+`"`) {
+				t.Fatalf("missing banner style %q in:\n%s", tt.style, s)
+			}
+			if !strings.Contains(s, tt.title) {
+				t.Fatalf("missing title %q in:\n%s", tt.title, s)
+			}
+		})
 	}
 }
 
@@ -82,7 +137,7 @@ func TestBuildPayloadStartedOmitsObjectList(t *testing.T) {
 		RunID:   "r-start",
 		Policy:  "p",
 		DryRun:  true,
-		Objects: []notify.ObjectSummary{{Kind: "XDemo", Name: "should-not-appear", Reason: "instance_root"}},
+		Objects: []notify.ObjectSummary{{Kind: "XDemo", Name: "should-not-appear", Reason: "instance_root; labels"}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -97,7 +152,7 @@ func TestBuildPayloadLiveDeletedHeading(t *testing.T) {
 	raw, err := teams.BuildPayload(notify.Event{
 		Kind: notify.KindFinished,
 		Objects: []notify.ObjectSummary{
-			{Kind: "XDemo", Namespace: "ns", Name: "gone", Reason: "instance_root"},
+			{Kind: "XDemo", Namespace: "ns", Name: "gone", Reason: "instance_root; label:xp-clean.io/eligible=true+default_ttl"},
 		},
 		ObjectsTotal: 1,
 	})
@@ -105,7 +160,7 @@ func TestBuildPayloadLiveDeletedHeading(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := string(raw)
-	if !strings.Contains(s, "Deleted") || !strings.Contains(s, "XDemo ns/gone — instance_root") {
+	if !strings.Contains(s, "Deleted") || !strings.Contains(s, "XDemo ns/gone — instance_root; label:xp-clean.io/eligible=true+default_ttl") {
 		t.Fatalf("live finished payload:\n%s", s)
 	}
 	if strings.Contains(s, "Would delete") {

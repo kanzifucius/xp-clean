@@ -71,7 +71,7 @@ func Evaluate(in Input, sel Selectors) (Result, error) {
 	return Result{
 		Eligible: true,
 		Paused:   paused,
-		Reason:   "matched",
+		Reason:   MatchedReason(sel),
 	}, nil
 }
 

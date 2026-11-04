@@ -129,34 +129,20 @@ func minDuration(a, b time.Duration) time.Duration {
 
 // BuildPayload builds the Workflows Adaptive Card wrapper JSON for ev.
 func BuildPayload(ev notify.Event) ([]byte, error) {
-	title := titleFor(ev)
-	colour := colourFor(ev)
-	facts := []map[string]string{
-		{"title": "Policy", "value": emptyDash(ev.Policy)},
-		{"title": "Result", "value": resultLabel(ev)},
-		{"title": "Dry-run", "value": strconv.FormatBool(ev.DryRun)},
-		{"title": "Scope", "value": emptyDash(ev.Scope)},
-		{"title": "Duration", "value": durationLabel(ev)},
-		{"title": "Traces", "value": strconv.Itoa(ev.Traces)},
-		{"title": "Planned deletes", "value": strconv.Itoa(ev.Planned)},
-		{"title": "Deleted", "value": strconv.Itoa(ev.Deleted)},
-		{"title": "Skipped", "value": strconv.Itoa(ev.Skipped)},
-		{"title": "Blocked", "value": strconv.Itoa(ev.Blocked)},
-		{"title": "Errors", "value": strconv.Itoa(ev.ErrorCount)},
-		{"title": "Run ID", "value": emptyDash(ev.RunID)},
-	}
+	style := bannerStyle(ev)
+	facts := primaryFacts(ev)
 
 	body := []any{
+		bannerBlock(ev, style),
 		map[string]any{
-			"type":   "TextBlock",
-			"size":   "Medium",
-			"weight": "Bolder",
-			"text":   title,
-			"color":  colour,
-		},
-		map[string]any{
-			"type":  "FactSet",
-			"facts": facts,
+			"type":    "Container",
+			"spacing": "Medium",
+			"items": []any{
+				map[string]any{
+					"type":  "FactSet",
+					"facts": facts,
+				},
+			},
 		},
 	}
 	body = append(body, objectListBlocks(ev)...)
@@ -166,6 +152,7 @@ func BuildPayload(ev notify.Event) ([]byte, error) {
 			"text":     summary,
 			"wrap":     true,
 			"isSubtle": true,
+			"spacing":  "Medium",
 		})
 	}
 
@@ -174,6 +161,9 @@ func BuildPayload(ev notify.Event) ([]byte, error) {
 		"type":    "AdaptiveCard",
 		"version": "1.4",
 		"body":    body,
+		"msteams": map[string]any{
+			"width": "Full",
+		},
 	}
 	if ev.LogURL != "" {
 		card["actions"] = []any{
@@ -198,28 +188,110 @@ func BuildPayload(ev notify.Event) ([]byte, error) {
 	return json.Marshal(payload)
 }
 
-func titleFor(ev notify.Event) string {
-	switch ev.Kind {
-	case notify.KindStarted:
-		return "xp-clean: run started"
-	case notify.KindFailed:
-		return "xp-clean: run failed"
-	default:
-		return "xp-clean: run finished"
+// bannerBlock is a full-bleed status header so the card pops in the Teams feed.
+func bannerBlock(ev notify.Event, style string) map[string]any {
+	items := []any{
+		map[string]any{
+			"type":   "TextBlock",
+			"size":   "Small",
+			"weight": "Bolder",
+			"text":   "XP-CLEAN",
+			"color":  "Light",
+		},
+		map[string]any{
+			"type":    "TextBlock",
+			"size":    "Large",
+			"weight":  "Bolder",
+			"text":    titleFor(ev),
+			"color":   "Light",
+			"wrap":    true,
+			"spacing": "None",
+		},
+		map[string]any{
+			"type":     "TextBlock",
+			"text":     bannerSubtitle(ev),
+			"wrap":     true,
+			"color":    "Light",
+			"isSubtle": true,
+			"spacing":  "Small",
+		},
+	}
+	return map[string]any{
+		"type":    "Container",
+		"style":   style,
+		"bleed":   true,
+		"spacing": "None",
+		"items":   items,
 	}
 }
 
-func colourFor(ev notify.Event) string {
+func bannerSubtitle(ev notify.Event) string {
+	policy := emptyDash(ev.Policy)
+	result := resultLabel(ev)
+	scope := emptyDash(ev.Scope)
+	return fmt.Sprintf("%s · %s · scope %s", policy, result, scope)
+}
+
+func primaryFacts(ev notify.Event) []map[string]string {
+	facts := []map[string]string{
+		{"title": "Duration", "value": durationLabel(ev)},
+		{"title": "Traces", "value": strconv.Itoa(ev.Traces)},
+		{"title": "Planned", "value": strconv.Itoa(ev.Planned)},
+	}
+	switch {
+	case ev.Kind == notify.KindStarted:
+		facts = append(facts, map[string]string{"title": "Dry-run", "value": strconv.FormatBool(ev.DryRun)})
+	case ev.DryRun:
+		facts = append(facts,
+			map[string]string{"title": "Would delete", "value": strconv.Itoa(ev.Skipped)},
+			map[string]string{"title": "Blocked", "value": strconv.Itoa(ev.Blocked)},
+		)
+	default:
+		facts = append(facts,
+			map[string]string{"title": "Deleted", "value": strconv.Itoa(ev.Deleted)},
+			map[string]string{"title": "Skipped", "value": strconv.Itoa(ev.Skipped)},
+			map[string]string{"title": "Blocked", "value": strconv.Itoa(ev.Blocked)},
+		)
+	}
+	if ev.ErrorCount > 0 || ev.Kind == notify.KindFailed {
+		facts = append(facts, map[string]string{"title": "Errors", "value": strconv.Itoa(ev.ErrorCount)})
+	}
+	facts = append(facts, map[string]string{"title": "Run ID", "value": emptyDash(ev.RunID)})
+	return facts
+}
+
+func titleFor(ev notify.Event) string {
+	switch ev.Kind {
+	case notify.KindStarted:
+		return "Run started"
+	case notify.KindFailed:
+		return "Run failed"
+	default:
+		if ev.DryRun {
+			return "Dry-run finished"
+		}
+		if ev.ErrorCount > 0 {
+			return "Run finished with errors"
+		}
+		return "Run finished"
+	}
+}
+
+// bannerStyle picks an Adaptive Card container style for the status banner.
+func bannerStyle(ev notify.Event) string {
 	switch ev.Kind {
 	case notify.KindFailed:
-		return "Attention"
+		return "attention"
 	case notify.KindStarted:
-		return "Accent"
+		return "accent"
 	default:
 		if ev.ErrorCount > 0 {
-			return "Warning"
+			return "warning"
 		}
-		return "Good"
+		if ev.DryRun {
+			return "emphasis"
+		}
+		return "good"
 	}
 }
 
@@ -272,21 +344,22 @@ func objectListBlocks(ev notify.Event) []any {
 		return nil
 	}
 	heading := objectsHeading(ev)
-	blocks := []any{
+	items := []any{
 		map[string]any{
-			"type":    "TextBlock",
-			"text":    heading,
-			"weight":  "Bolder",
-			"wrap":    true,
-			"spacing": "Medium",
+			"type":   "TextBlock",
+			"text":   heading,
+			"weight": "Bolder",
+			"size":   "Medium",
+			"wrap":   true,
 		},
 	}
 	for _, o := range ev.Objects {
-		blocks = append(blocks, map[string]any{
+		items = append(items, map[string]any{
 			"type":    "TextBlock",
-			"text":    notify.FormatObjectLine(o),
+			"text":    "• " + notify.FormatObjectLine(o),
 			"wrap":    true,
-			"spacing": "None",
+			"spacing": "Small",
+			"fontType": "Monospace",
 		})
 	}
 	total := ev.ObjectsTotal
@@ -298,7 +371,7 @@ func objectListBlocks(ev notify.Event) []any {
 		if ev.LogURL != "" {
 			more += " (see Open logs)"
 		}
-		blocks = append(blocks, map[string]any{
+		items = append(items, map[string]any{
 			"type":     "TextBlock",
 			"text":     more,
 			"wrap":     true,
@@ -306,7 +379,14 @@ func objectListBlocks(ev notify.Event) []any {
 			"spacing":  "Small",
 		})
 	}
-	return blocks
+	return []any{
+		map[string]any{
+			"type":    "Container",
+			"style":   "emphasis",
+			"spacing": "Medium",
+			"items":   items,
+		},
+	}
 }
 
 func objectsHeading(ev notify.Event) string {
