@@ -57,7 +57,7 @@ On release tags, CI runs `scripts/helm-package.sh` (rewrites `Chart.yaml` + `val
 
 ## Dry-run default
 
-`dryRun: true` is the chart default (CLI `--dry-run=true`). The sample policy ConfigMap also has `dryRun: true`. Live deletes require **both** the chart value and the policy document set to `false`.
+`dryRun: true` is the chart default. The CronJob runs `xp-clean run --once` as a dry-run plan. Setting chart `dryRun: false` passes `--apply`. Live deletes still require the sample policy ConfigMap `dryRun: false` as well.
 
 ## Key values
 
@@ -68,7 +68,7 @@ On release tags, CI runs `scripts/helm-package.sh` (rewrites `Chart.yaml` + `val
 | `image.repository` | `ghcr.io/kanzifucius/xp-clean` | Public GHCR image package |
 | `image.tag` | `v0.1.0-rc.1` | Prefer immutable `:vX.Y.Z` |
 | `imagePullSecrets` | `[]` | Optional; private forks only |
-| `dryRun` | `true` | Passed as `--dry-run` |
+| `dryRun` | `true` | When false, CronJob/manager get `--apply` |
 | `cronjob.enabled` | `true` | Default install path |
 | `cronjob.schedule` | `0 */6 * * *` | Kubernetes CronJob schedule |
 | `manager.enabled` | `false` | Optional secondary path |

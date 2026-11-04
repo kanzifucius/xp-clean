@@ -16,32 +16,31 @@ make build   # writes bin/xp-clean with version ldflags
 
 ## Dry-run locally (file override)
 
-There is **no** implicit sample path. Pass `--config` every time you use a file:
+There is **no** implicit sample path. Pass `--config` every time you use a file. `run --once` defaults to a dry-run plan (stacks matched / would delete):
 
 ```bash
 go run ./cmd/xp-clean run --once \
   --config config/samples/cleanuppolicy.yaml \
-  --dry-run=true \
   --kubeconfig "$HOME/.kube/config"
 ```
 
-Inspect the planner output without executing:
+Scripts that need machine-readable DeletePlans can still use the thin deprecated wrapper:
 
 ```bash
 go run ./cmd/xp-clean plan --config config/samples/cleanuppolicy.yaml -o json
 ```
 
-Trace one XR:
+Inspect one composition tree (debug only):
 
 ```bash
-go run ./cmd/xp-clean trace \
+go run ./cmd/xp-clean debug trace \
   --name test-db -n xp-test-1 \
   --group db.dev.example.org \
   --kind XDB
 ```
 
 !!! tip "Live deletes"
-    Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.
+    Live deletes require **`--apply`** and policy `dryRun: false`. Deletes use **foreground** propagation. Waiting is opt-in (`--wait`). Prefer the default dry-run roots plan until stacks matched / would delete looks correct. Use `--mode=trace` for full trees. Xp-clean never strips Crossplane finalizers.
 
 ## In-cluster (Helm)
 
@@ -54,7 +53,7 @@ helm upgrade --install xp-clean oci://ghcr.io/kanzifucius/charts/xp-clean \
   --create-namespace
 ```
 
-From a checkout use [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean) and pin `--set image.tag=v0.1.0-rc.1`. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap, and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
+From a checkout use [`deploy/helm/xp-clean`](https://github.com/kanzifucius/xp-clean/tree/main/deploy/helm/xp-clean) and pin `--set image.tag=v0.1.0-rc.1`. That installs Namespace, ServiceAccount, RBAC, a sample policy ConfigMap (label eligibility + TTL + dry-run + instances-only), and a CronJob (`xp-clean run --once`) with **dry-run on by default**. The optional manager Deployment stays off unless `manager.enabled=true`.
 
 Without Helm, apply [`config/rbac/role.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/rbac/role.yaml) plus labelled ConfigMaps (`xp-clean.io/policy=true`, data key `policy.yaml`) from [`config/samples/`](https://github.com/kanzifucius/xp-clean/tree/main/config/samples).
 

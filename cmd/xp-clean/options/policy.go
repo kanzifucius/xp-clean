@@ -20,6 +20,9 @@ type PolicyFlags struct {
 	ConfigPath      string
 	PolicyNamespace string
 	DryRun          bool
+	Apply           bool
+	Mode            string
+	Wait            bool
 	Scope           string
 	FailOnBlocked   bool
 	Notify          bool
@@ -27,30 +30,55 @@ type PolicyFlags struct {
 }
 
 // Bind registers --config / --dry-run / --scope / ConfigMap / notify flags on a command.
-func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withDryRun bool) {
+// withLiveControls adds --apply and --dry-run (run/manager). Plan omits them and always dry-runs.
+func (p *PolicyFlags) Bind(fs *pflag.FlagSet, withLiveControls bool) {
 	fs.StringVar(&p.ConfigPath, "config", "", "path to policy YAML file override (explicit; no implicit sample path). When unset, load labelled ConfigMaps from --policy-namespace")
 	fs.StringVar(&p.PolicyNamespace, "policy-namespace", "", "namespace for labelled policy ConfigMaps (default: xp-clean or XP_CLEAN_POLICY_NAMESPACE)")
-	if withDryRun {
-		// Default false is irrelevant; use Changed("dry-run") to detect overrides.
-		fs.BoolVar(&p.DryRun, "dry-run", false, "planner dry-run only (no deletes); when unset, use policy dryRun (default true). Not kubectl API-server dry-run")
+	if withLiveControls {
+		// Default false is irrelevant; use Changed("dry-run") / Apply to detect overrides.
+		fs.BoolVar(&p.DryRun, "dry-run", false, "compatibility: --dry-run=true forces a dry-run plan; --dry-run=false allows live deletes only when policy dryRun is false (prefer --apply). Not kubectl API-server dry-run")
+		fs.BoolVar(&p.Apply, "apply", false, "allow live deletes when the policy also has dryRun: false (happy-path live switch; default is dry-run plan)")
 	}
+	fs.StringVar(&p.Mode, "mode", "", "deletion.mode override: roots|trace (default from policy, then roots)")
+	fs.BoolVar(&p.Wait, "wait", false, "wait for each delete to complete (honours deletion.waitTimeout / stuck-finalizer audit); default is no wait")
 	fs.StringVar(&p.Scope, "scope", "", "deletion.scope override: instances-only|all (default from policy, then instances-only)")
 	fs.BoolVar(&p.FailOnBlocked, "fail-on-blocked", false, "exit 3 when the run completed with blocked plans")
 	fs.BoolVar(&p.Notify, "notify", false, "override observability.notifications.enabled (webhook URL still from env)")
 	fs.BoolVar(&p.NotifyOnDryRun, "notify-on-dry-run", true, "override observability.notifications.onDryRun")
 }
 
-// Overrides builds FlagOverrides from flags (including dry-run Changed state).
-func (p *PolicyFlags) Overrides(fs *pflag.FlagSet, forceDryRun bool) policy.FlagOverrides {
+// Overrides builds FlagOverrides from flags (including dry-run / --apply Changed state).
+// alwaysDryRun is true for plan (never cleared by env or --apply).
+// For run/manager, alwaysDryRun is false and ForceDryRun defaults to true unless
+// --apply or --dry-run=false requests live (policy dryRun: false still required).
+func (p *PolicyFlags) Overrides(fs *pflag.FlagSet, alwaysDryRun bool) policy.FlagOverrides {
 	o := policy.FlagOverrides{
 		ConfigPath:      p.ConfigPath,
 		PolicyNamespace: p.PolicyNamespace,
 		Scope:           p.Scope,
-		ForceDryRun:     forceDryRun,
+		Mode:            p.Mode,
+		AlwaysDryRun:    alwaysDryRun,
+		// Day-to-day default: dry-run plan. Cleared by --apply / --dry-run=false
+		// (policy dryRun: false still required for live). Plan sets AlwaysDryRun.
+		ForceDryRun: true,
 	}
 	if fs != nil && fs.Lookup("dry-run") != nil && fs.Changed("dry-run") {
-		o.DryRunSet = true
-		o.DryRun = p.DryRun
+		o.LiveControlsFromFlags = true
+		if p.DryRun {
+			o.DryRunSet = true
+			o.DryRun = true
+			o.ForceDryRun = true
+		} else {
+			// --dry-run=false: allow live if policy permits; never override policy to false.
+			o.ForceDryRun = false
+		}
+	} else if fs != nil && fs.Lookup("apply") != nil && fs.Changed("apply") {
+		o.LiveControlsFromFlags = true
+		o.ForceDryRun = !p.Apply
+	}
+	if fs != nil && fs.Lookup("wait") != nil && fs.Changed("wait") {
+		o.WaitSet = true
+		o.Wait = p.Wait
 	}
 	if fs != nil && fs.Lookup("notify") != nil && fs.Changed("notify") {
 		o.NotifySet = true
@@ -83,17 +111,27 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 	if w == nil {
 		w = os.Stderr
 	}
-	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v scope=%s traces=%d plans=%d\n",
-		pol.Name, pol.DryRun, pol.Deletion.Scope, len(result.Traces), len(result.Plans))
+	wouldDelete := 0
+	for _, p := range result.Plans {
+		if len(p.BlockedBy) == 0 {
+			wouldDelete++
+		}
+	}
+	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v mode=%s scope=%s stacksMatched=%d wouldDelete=%d\n",
+		pol.Name, pol.DryRun, pol.Deletion.Mode, pol.Deletion.Scope, len(result.Traces), wouldDelete)
 	for _, tr := range result.Traces {
 		_, _ = fmt.Fprint(w, trace.RenderText(tr))
 	}
 	for _, p := range result.Plans {
 		if len(p.BlockedBy) > 0 {
-			_, _ = fmt.Fprintf(w, "plan %s blocked: %v\n", p.TraceID, p.BlockedBy)
+			_, _ = fmt.Fprintf(w, "stack %s blocked: %v\n", p.TraceID, p.BlockedBy)
 			continue
 		}
-		_, _ = fmt.Fprintf(w, "plan %s steps=%d dryRun=%v\n", p.TraceID, len(p.Steps), p.DryRun)
+		verb := "would delete"
+		if !p.DryRun {
+			verb = "deleting"
+		}
+		_, _ = fmt.Fprintf(w, "stack %s %s steps=%d dryRun=%v\n", p.TraceID, verb, len(p.Steps), p.DryRun)
 		for i, s := range p.Steps {
 			_, _ = fmt.Fprintf(w, "  %d. %s %s/%s\n", i+1, s.Action, s.Kind, s.Ref.Key())
 		}
@@ -101,10 +139,10 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
 }
 
 // RejectNamespaceOnRunPlan enforces the locked rule that -n / --namespace is
-// valid only on trace. Eligibility never comes from a CLI namespace flag.
+// valid only on debug trace. Eligibility never comes from a CLI namespace flag.
 func RejectNamespaceOnRunPlan(ns string) error {
 	if ns == "" {
 		return nil
 	}
-	return fmt.Errorf("--namespace / -n is not valid on run/plan; eligibility comes from policy labels/globs only (-n is allowed on trace)")
+	return fmt.Errorf("--namespace / -n is not valid on run/plan; eligibility comes from policy labels/globs only (-n is allowed on debug trace)")
 }

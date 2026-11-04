@@ -10,21 +10,76 @@ In-cluster policy uses **ConfigMaps** in the dedicated **`xp-clean`** namespace.
 | Label | `xp-clean.io/policy=true` |
 | Data key | `policy.yaml` |
 
-Multiple labelled ConfigMaps may coexist for **per-team multi-tenancy** (different TTLs / globs per team).
+Multiple labelled ConfigMaps may coexist for **per-team multi-tenancy** (different TTLs / selectors per team).
 
 Samples in the repository:
 
-- [`config/samples/configmap.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap.yaml) — team A
-- [`config/samples/configmap-team-b.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap-team-b.yaml) — team B
+- [`config/samples/configmap.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap.yaml) — day-1 team A (labels + TTL + roots)
 - [`config/samples/cleanuppolicy.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/cleanuppolicy.yaml) — file form for `--config` only
+- [`config/samples/configmap-team-b.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/config/samples/configmap-team-b.yaml) — advanced multi-tenant globs
 
 ### File override
 
 Pass **`--config PATH`** (or `XP_CLEAN_CONFIG`) for local or mounted file use. There is **no** implicit repo-relative sample path.
 
-## Eligibility
+## Day-1 essentials
 
-Matching uses **labels and/or glob patterns**. Operators may use labels, globs, or both. When both are set, an object must satisfy **all non-empty constraint groups (AND)**.
+Start with these knobs:
+
+| Concern | What to set |
+|---------|-------------|
+| **Eligibility** | `selectors.requireLabels` (for example `xp-clean.io/eligible: "true"`) |
+| **TTL** | `ttl.respectResourceTTL` + `ttl.defaultTTL` |
+| **Dry-run** | `dryRun: true` until you are ready; live also needs CLI `--apply` |
+| **Mode** | `deletion.mode: roots` (default) — highest-parent XRs only |
+| **Scope** | `deletion.scope: instances-only` (default; safer) |
+
+```yaml
+name: team-a
+dryRun: true
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+ttl:
+  respectResourceTTL: true
+  defaultTTL: 168h
+deletion:
+  mode: roots
+  scope: instances-only
+```
+
+!!! important "Namespace alone is not enough"
+    Namespace-implies-eligibility is **not** the model. Eligibility never comes from `-n` / `--namespace` on `run` or `plan` (that flag is rejected there). Use policy labels and/or globs only. `-n` is valid on `debug trace` only.
+
+TTL fields gate when an eligible stack is old enough to delete.
+
+## Cleanup modes
+
+| `deletion.mode` / `--mode` | Behaviour |
+|----------------------------|-----------|
+| `roots` (**default**) | Discover + match + highest parents. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk |
+| `trace` | Opt-in. Builds parent→child traces for detailed plans, nested keep/paused gates, orphans, and richer execute |
+
+## Delete semantics
+
+- Live deletes always use Kubernetes **`DeletionPropagation=Foreground`**.
+- **Waiting** after delete is **opt-in**: `deletion.wait: true` or CLI `--wait`. When wait is on, honour `deletion.waitTimeout` and audit stuck finalizers. When wait is off (default), issue the foreground Delete and continue.
+- Xp-clean **never** strips Crossplane finalizers.
+
+## Deletion scope
+
+| `deletion.scope` | Behaviour |
+|------------------|------------|
+| `instances-only` (**default**) | Safer — root XRs (and composed resources via GC / foreground) |
+| `all` | Advanced — instances first, then definitions (see below) |
+
+## Advanced
+
+Still supported in the schema; keep them out of first-run samples unless you need them.
+
+### Full glob AND matrix
+
+Matching uses **labels and/or glob patterns**. When both are set, an object must satisfy **all non-empty constraint groups (AND)**.
 
 | Mechanism | Examples |
 |-----------|----------|
@@ -34,19 +89,24 @@ Matching uses **labels and/or glob patterns**. Operators may use labels, globs, 
 | GVK globs | **`group/version`** patterns (kind **not** required), e.g. `*.dev.example.org/*` |
 | Deny list | `namespaceDeny: [kube-system, crossplane-system]` |
 
-!!! important "Namespace alone is not enough"
-    Namespace-implies-eligibility is **not** the model. Eligibility never comes from `-n` / `--namespace` on `run` or `plan` (that flag is rejected there). Use policy labels and/or globs only.
+### `mode: trace` and `scope: all`
 
-TTL fields (`respectResourceTTL`, `defaultTTL`, …) gate when an eligible stack is old enough to delete.
+Prefer `deletion.mode: trace` when you need nested keep/paused visibility, orphan reporting detail, or definition-layer planning. `deletion.scope: all` deletes instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs `allowXRDDeletion: true`.
 
-## Deletion scope
+### Orphan modes, budgets, wait, notify sinks
 
-| `deletion.scope` | Behaviour |
-|------------------|------------|
-| `instances-only` (**default**) | Safer — XRs and composed resources / MRs |
-| `all` | Instances first, then definitions (CompositionRevision → Composition → XRD) that have zero remaining instances and match selectors. XRD also needs `allowXRDDeletion: true` |
+| Field | Notes |
+|-------|--------|
+| `deletion.wait` | Opt-in poll-until-gone (default `false`); override with `--wait` |
+| `deletion.waitTimeout` | Used only when wait is on (default `30m`) |
+| `deletion.orphanMode` | MVP `report` surfaces orphans without inventing parallel ownership |
+| `deletion.maxTracesPerRun` / `maxDeletesPerRun` | Per-run budgets |
+| `deletion.deletePaused` | Default `false` — skip `crossplane.io/paused` |
+| `ttl.applyDefaultTTLIfMissing` | Apply `defaultTTL` when the resource has no TTL annotation |
+| `observability.notifications` | Multi-sink schema (Teams MVP); see [Notifications](../operations/notifications.md) |
+| `schedule` / `timezone` | Used by `manager` interval stub / future cron |
 
-## Policy document shape (summary)
+Example shape with advanced fields filled in:
 
 ```yaml
 name: team-a
@@ -67,13 +127,15 @@ ttl:
   defaultTTL: 168h
   applyDefaultTTLIfMissing: false
 deletion:
+  mode: trace                       # or roots (default)
   scope: instances-only             # or all
+  wait: false
+  waitTimeout: 30m
   maxTracesPerRun: 20
   maxDeletesPerRun: 100
   orphanMode: report
   deletePaused: false
   allowXRDDeletion: false
-  waitTimeout: 30m
 observability:
   verbosity: normal
   notifications:
@@ -85,6 +147,6 @@ Audit events go to **stdout** JSON only for now — no audit ConfigMap or object
 
 ## RBAC note
 
-Lab / backend installs may use broad reader/deleter ClusterRoles for now; tighten later. Prefer installing into the dedicated `xp-clean` namespace (Helm default when the chart lands).
+Lab / backend installs may use broad reader/deleter ClusterRoles for now; tighten later. Prefer installing into the dedicated `xp-clean` namespace (Helm default).
 
 Next: [Cleanup operations](../operations/cleanup.md) for safety gates and the run flow, or [Architecture](../architecture/index.md) for diagrams of how the runner is wired.

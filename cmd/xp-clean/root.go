@@ -21,15 +21,19 @@ func newRootCommand() *cobra.Command {
 labels and/or globs, builds parent→child traces, and deletes leftovers on a
 schedule.
 
+Day-to-day: "xp-clean run --once" prints a dry-run plan of stacks matched /
+would delete (roots mode by default). Live deletes need --apply and policy
+dryRun: false. Full composition traces are opt-in via --mode=trace.
+
 Claims / LegacyCluster claim paths are not supported.
 
 In-cluster policy comes from labelled ConfigMaps in the xp-clean namespace
 (multi-tenant / per-team). Pass --config for an explicit file override.
 
 --dry-run is a boolean planner dry-run (client-side DeletePlan only), not
-kubectl API-server dry-run. --scope=all means definitions+instances; the
-plan subcommand plans all eligible traces (not the same as scope=all).
---namespace / -n is valid only on trace.`,
+kubectl API-server dry-run. Prefer --apply for the live switch. Live Deletes
+use foreground propagation; --wait is opt-in. --scope=all means
+definitions+instances. --namespace / -n is valid only on debug trace.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
@@ -47,7 +51,8 @@ plan subcommand plans all eligible traces (not the same as scope=all).
 	cmd.AddCommand(
 		newRunCommand(g),
 		newPlanCommand(g),
-		newTraceCommand(g),
+		newDebugCommand(g),
+		newHiddenRootTraceCommand(g),
 		newManagerCommand(g),
 		newVersionCommand(),
 	)

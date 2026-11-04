@@ -1,8 +1,7 @@
-# Primary in-cluster policy surface for team A.
+# Primary in-cluster policy surface for team A (day-1 essentials).
 # Install into the dedicated xp-clean namespace (Helm default).
 # Label xp-clean.io/policy=true so xp-clean discovers this ConfigMap.
-# Multiple labelled ConfigMaps may coexist for per-team multi-tenancy
-# (see configmap-team-b.yaml). Pass --config only for local/file override.
+# Advanced selectors / mode:trace / notify / budgets: Concepts → Policy (Advanced).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,37 +13,13 @@ metadata:
 data:
   policy.yaml: |
     name: team-a
-    schedule: "0 */6 * * *"
     dryRun: true
-    timezone: Europe/London
     selectors:
       requireLabels:
         xp-clean.io/eligible: "true"
-      globs:
-        namespaces: ["team-a-*", "xp-test-*"]
-        xrdNames: ["*.dev.example.org"]
-        xrNames: ["test-*"]
-        # group/version globs (kind not required)
-        gvks: ["*.dev.example.org/*"]
-      namespaceDeny: ["kube-system", "crossplane-system"]
     ttl:
       respectResourceTTL: true
       defaultTTL: 168h
-      applyDefaultTTLIfMissing: false
     deletion:
+      mode: roots
       scope: instances-only
-      maxTracesPerRun: 20
-      maxDeletesPerRun: 100
-      orphanMode: report
-      deletePaused: false
-      allowXRDDeletion: false
-      waitTimeout: 30m
-    observability:
-      verbosity: normal
-      notifications:
-        enabled: false
-        notifyOn: [started, finished, failed]
-        onDryRun: true
-        sinks:
-          - type: teams
-            webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL

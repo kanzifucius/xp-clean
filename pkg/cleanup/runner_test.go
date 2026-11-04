@@ -270,6 +270,81 @@ func TestRunnerScopeAllBlocksDefinitionsWhenOtherXRRemains(t *testing.T) {
 	}
 }
 
+func TestRunnerRootsModeSkipsCompositionWalk(t *testing.T) {
+	xrdU := discover.MustUnstructured("apiextensions.crossplane.io/v2", "CompositeResourceDefinition", "", "xdbs.dev.example.org",
+		map[string]string{"xp-clean.io/eligible": "true"},
+		map[string]interface{}{
+			"group": "db.dev.example.org",
+			"scope": "Namespaced",
+			"names": map[string]interface{}{"kind": "XDB", "plural": "xdbs"},
+			"versions": []interface{}{
+				map[string]interface{}{"name": "v1alpha1", "served": true, "storage": true},
+			},
+		},
+	)
+	xr := discover.MustUnstructured("db.dev.example.org/v1alpha1", "XDB", "xp-test-1", "test-db",
+		map[string]string{"xp-clean.io/eligible": "true"},
+		map[string]interface{}{
+			"crossplane": map[string]interface{}{
+				"resourceRefs": []interface{}{
+					map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "ConfigMap",
+						"name":       "cm",
+						"namespace":  "xp-test-1",
+					},
+				},
+			},
+		},
+	)
+	_ = unstructured.SetNestedField(xr.Object, time.Now().UTC().Add(-72*time.Hour).Format(time.RFC3339), "metadata", "creationTimestamp")
+	cm := discover.MustUnstructured("v1", "ConfigMap", "xp-test-1", "cm", nil, map[string]interface{}{})
+
+	mem := &discover.MemoryBackend{}
+	mem.Seed(xrdU, xr, cm)
+	info, err := discover.InspectXRD(xrdU, match.Selectors{
+		RequireLabels: map[string]string{match.LabelEligible: "true"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mem.Roots = []discover.RootCandidate{{XR: xr, XRD: info}}
+
+	runner := &cleanup.Runner{Backend: mem, Out: io.Discard, Now: func() time.Time { return time.Now().UTC() }}
+	delCfg := cleanup.DefaultDeletionConfig() // mode roots by default
+	res, err := runner.RunOnce(context.Background(), cleanup.PolicyView{
+		Name:      "test",
+		DryRun:    true,
+		Selectors: match.Selectors{RequireLabels: map[string]string{match.LabelEligible: "true"}},
+		TTL:       match.TTLConfig{RespectResourceTTL: false},
+		Deletion:  delCfg,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Traces) != 1 {
+		t.Fatalf("traces=%d", len(res.Traces))
+	}
+	if len(res.Traces[0].Nodes) != 1 || res.Traces[0].Nodes[0].Kind != trace.NodeXR {
+		t.Fatalf("roots mode must be XR-only, got %#v", res.Traces[0].Nodes)
+	}
+
+	delCfg.Mode = cleanup.ModeTrace
+	res, err = runner.RunOnce(context.Background(), cleanup.PolicyView{
+		Name:      "test",
+		DryRun:    true,
+		Selectors: match.Selectors{RequireLabels: map[string]string{match.LabelEligible: "true"}},
+		TTL:       match.TTLConfig{RespectResourceTTL: false},
+		Deletion:  delCfg,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Traces[0].Nodes) < 2 {
+		t.Fatalf("trace mode should include composed children, got %#v", res.Traces[0].Nodes)
+	}
+}
+
 func TestHasBlockedPlans(t *testing.T) {
 	if cleanup.HasBlockedPlans(nil) {
 		t.Fatal("nil plans should not be blocked")

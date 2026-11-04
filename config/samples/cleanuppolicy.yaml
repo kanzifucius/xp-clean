@@ -1,52 +1,20 @@
-# Sample CleanupPolicy document (file form for --config override).
-# In-cluster primary surface is labelled ConfigMaps in the dedicated xp-clean
-# namespace — see configmap.yaml / configmap-team-b.yaml for multi-tenancy.
+# Day-1 sample CleanupPolicy (file form for --config override).
+# In-cluster primary surface is labelled ConfigMaps — see configmap.yaml.
 # British English docs; XR-only / v2-native — no claim support.
-# Audit retention sinks are deferred (stdout JSON only).
+#
+# Essentials: label eligibility + TTL + dry-run + instances-only + roots mode.
+# Live deletes: CLI --apply and dryRun: false. Deletes use foreground propagation.
+# Waiting after delete is opt-in (deletion.wait / --wait).
+# Advanced (mode: trace, scope: all, globs, notify, budgets): Concepts → Policy.
 name: test-stacks
-schedule: "0 */6 * * *"
 dryRun: true
-timezone: Europe/London
 selectors:
-  # Labels and/or globs — either side may be empty.
-  # Object must satisfy all non-empty constraint groups (AND).
   requireLabels:
     xp-clean.io/eligible: "true"
-  globs:
-    namespaces: ["team-*-dev", "xp-test-*"]
-    xrdNames: ["*.dev.example.org"]
-    xrNames: ["test-*", "ephemeral-*"]
-    # First-cut GVK globs are group/version (kind not required).
-    gvks: ["*.dev.example.org/*"]
-  namespaceDeny: ["kube-system", "crossplane-system"]
 ttl:
   respectResourceTTL: true
   defaultTTL: 168h
-  applyDefaultTTLIfMissing: false
 deletion:
-  scope: instances-only # instances-only (default) | all
-  maxTracesPerRun: 20
-  maxDeletesPerRun: 100
-  orphanMode: report
-  deletePaused: false # skip paused resources by default
-  allowXRDDeletion: false
-  waitTimeout: 30m
-observability:
-  verbosity: normal
-  # Notifications are disabled until enabled: true. Webhook URLs stay in env/Secrets
-  # (never inline here). Multi-sink schema; Teams Workflows is the MVP implementation.
-  notifications:
-    enabled: false
-    notifyOn: [started, finished, failed]
-    onDryRun: true
-    onSuccessWithZeroDeletes: false
-    onPartialErrors: true
-    sinks:
-      - type: teams
-        webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL
-        # Optional log deep-link; {{runId}} is substituted per event.
-        # logURLTemplate: "https://logs.example/search?q={{runId}}"
-      # Phase 2:
-      # - type: slack
-      #   webhookURLFromEnv: XP_CLEAN_SLACK_WEBHOOK_URL
-
+  mode: roots
+  scope: instances-only
+  # wait: false   # default — set true (or pass --wait) to poll until gone

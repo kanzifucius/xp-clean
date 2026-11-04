@@ -24,7 +24,10 @@ func newTraceCommand(g *options.Global) *cobra.Command {
 		Use:   "trace",
 		Short: "Print one composition tree from an XR",
 		Long: `Trace walks spec.crossplane.resourceRefs from a root XR and prints the DAG.
-Use --name namespace/name, or a bare name with --namespace / -n.`,
+Use --name namespace/name, or a bare name with --namespace / -n.
+
+This is a debug helper. Day-to-day cleanup uses "xp-clean run --once", which
+still builds traces internally for planning.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" || group == "" || kind == "" {
 				return exit.UsageErr(fmt.Errorf("trace requires --name, --group, and --kind"))
@@ -86,5 +89,14 @@ Use --name namespace/name, or a bare name with --namespace / -n.`,
 	cmd.Flags().StringVar(&version, "version", "v1alpha1", "XR API version")
 	cmd.Flags().StringVar(&kind, "kind", "", "XR kind")
 	cmd.Flags().StringVarP(&output, "output", "o", "text", "output format: text|json|yaml")
+	return cmd
+}
+
+// newHiddenRootTraceCommand keeps "xp-clean trace …" working for existing
+// scripts while hiding it from root --help. Prefer "xp-clean debug trace".
+func newHiddenRootTraceCommand(g *options.Global) *cobra.Command {
+	cmd := newTraceCommand(g)
+	cmd.Hidden = true
+	cmd.Deprecated = "use \"xp-clean debug trace\""
 	return cmd
 }

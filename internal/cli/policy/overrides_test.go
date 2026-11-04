@@ -19,7 +19,7 @@ func TestFlagOverridesDryRunAndScope(t *testing.T) {
 	path := filepath.Join(dir, "policy.yaml")
 	content := []byte(`
 name: t
-dryRun: true
+dryRun: false
 selectors:
   requireLabels:
     xp-clean.io/eligible: "true"
@@ -30,20 +30,69 @@ deletion:
 		t.Fatal(err)
 	}
 
+	// --dry-run=false / allow-live clears ForceDryRun but never overrides a
+	// policy that still has dryRun: true. Here policy is already live.
 	r, err := policy.LoadAndMerge(policy.FlagOverrides{
 		ConfigPath: path,
-		DryRunSet:  true,
-		DryRun:     false,
-		Scope:      "all",
+		ForceDryRun: false,
+		Scope:       "all",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if r.DryRun {
-		t.Fatal("flag should force dryRun false")
+		t.Fatal("policy dryRun false + ForceDryRun false should stay live")
 	}
 	if r.Deletion.Scope != cleanup.ScopeAll {
 		t.Fatalf("scope %q", r.Deletion.Scope)
+	}
+}
+
+func TestApplyDoesNotOverridePolicyDryRunTrue(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: t
+dryRun: true
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath:  path,
+		ForceDryRun: false, // --apply
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r.DryRun {
+		t.Fatal("--apply must not force live when policy dryRun is true")
+	}
+}
+
+func TestRunDefaultForceDryRun(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: t
+dryRun: false
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath:  path,
+		ForceDryRun: true, // run default without --apply
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r.DryRun {
+		t.Fatal("run without --apply must dry-run even when policy dryRun is false")
 	}
 }
 
@@ -59,7 +108,11 @@ selectors:
 `), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	r, err := policy.LoadAndMerge(policy.FlagOverrides{ConfigPath: path, ForceDryRun: true})
+	r, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath:   path,
+		AlwaysDryRun: true,
+		ForceDryRun:  true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

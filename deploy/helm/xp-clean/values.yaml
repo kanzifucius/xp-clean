@@ -28,8 +28,8 @@ serviceAccount:
 rbac:
   create: true
 
-# Planner dry-run override passed as --dry-run on the CronJob / manager.
-# Live deletes need dryRun: false here AND in the policy ConfigMap.
+# When true (default), CronJob/manager stay on the dry-run plan path.
+# Live deletes need dryRun: false here (passes --apply) AND policy dryRun: false.
 dryRun: true
 
 # CronJob is the default install path (xp-clean run --once).
@@ -40,7 +40,7 @@ cronjob:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   startingDeadlineSeconds: 120
-  # Extra args appended after `run --once --dry-run=…`.
+  # Extra args appended after `run --once` (and optional --apply).
   extraArgs: []
   # - --fail-on-blocked
 
@@ -58,46 +58,25 @@ resources:
     cpu: 500m
     memory: 256Mi
 
-# Sample labelled policy ConfigMap (xp-clean.io/policy=true). Edit selectors before live use.
+# Sample labelled policy ConfigMap (xp-clean.io/policy=true). Day-1 essentials only.
+# Advanced globs / notify / budgets / scope: all — see docs Concepts → Policy (Advanced).
 policy:
   create: true
   name: xp-clean-policy-sample
   # Inline document under data.policy.yaml. dryRun here should stay true until you are ready.
   document: |
     name: sample
-    schedule: "0 */6 * * *"
     dryRun: true
-    timezone: Europe/London
     selectors:
       requireLabels:
         xp-clean.io/eligible: "true"
-      globs:
-        namespaces: ["xp-test-*"]
-        xrdNames: ["*.dev.example.org"]
-        xrNames: ["test-*"]
-        gvks: ["*.dev.example.org/*"]
-      namespaceDeny: ["kube-system", "crossplane-system"]
     ttl:
       respectResourceTTL: true
       defaultTTL: 168h
-      applyDefaultTTLIfMissing: false
     deletion:
+      mode: roots
       scope: instances-only
-      maxTracesPerRun: 20
-      maxDeletesPerRun: 100
-      orphanMode: report
-      deletePaused: false
-      allowXRDDeletion: false
-      waitTimeout: 30m
-    observability:
-      verbosity: normal
-      notifications:
-        enabled: false
-        notifyOn: [started, finished, failed]
-        onDryRun: true
-        sinks:
-          - type: teams
-            webhookURLFromEnv: XP_CLEAN_TEAMS_WEBHOOK_URL
+
 
 # Optional env (for example Teams webhook Secret refs). Empty by default.
 env: []
