@@ -23,15 +23,33 @@ type FlagOverrides struct {
 	// Empty defaults to conf.DefaultPolicyNamespace ("xp-clean").
 	PolicyNamespace string
 
-	// DryRunSet is true when --dry-run was explicitly passed on the argv.
+	// DryRunSet is true when --dry-run=true (or XP_CLEAN_DRY_RUN=true) was set.
+	// DryRun=false from flags/env never overrides a policy dryRun: true — use
+	// ForceDryRun / AlwaysDryRun instead. Live deletes need policy dryRun: false
+	// plus --apply (or --dry-run=false clearing ForceDryRun).
 	DryRunSet bool
 	DryRun    bool
 
 	// Scope is empty when unset on the argv.
 	Scope string
 
-	// ForceDryRun forces dry-run on after merge (used by plan).
+	// Mode is empty when unset on the argv (deletion.mode: roots|trace).
+	Mode string
+
+	// WaitSet is true when --wait was explicitly passed.
+	WaitSet bool
+	Wait    bool
+
+	// ForceDryRun forces dry-run on after merge. Cleared by --apply /
+	// --dry-run=false / XP_CLEAN_DRY_RUN=false unless AlwaysDryRun is set.
 	ForceDryRun bool
+
+	// AlwaysDryRun is true for plan: never cleared by env or live flags.
+	AlwaysDryRun bool
+
+	// LiveControlsFromFlags is true when --apply or --dry-run was set on argv
+	// (env must not override those).
+	LiveControlsFromFlags bool
 
 	// NotifySet is true when --notify was explicitly passed.
 	NotifySet bool
@@ -67,19 +85,40 @@ func ResolvePolicyNamespace(flagNS string) string {
 // ApplyEnv overlays XP_CLEAN_* env vars when the corresponding flag was not set.
 // Call before ApplyFlags or merge inside LoadAndMerge.
 func ApplyEnv(o *FlagOverrides) error {
-	if !o.DryRunSet {
+	if !o.LiveControlsFromFlags && !o.AlwaysDryRun {
 		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_DRY_RUN")); v != "" {
 			b, err := parseBool(v)
 			if err != nil {
 				return fmt.Errorf("XP_CLEAN_DRY_RUN: %w", err)
 			}
-			o.DryRunSet = true
-			o.DryRun = b
+			if b {
+				o.DryRunSet = true
+				o.DryRun = true
+				o.ForceDryRun = true
+			} else {
+				// Allow live if policy permits; do not override policy dryRun: true.
+				o.ForceDryRun = false
+			}
 		}
 	}
 	if o.Scope == "" {
 		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_SCOPE")); v != "" {
 			o.Scope = v
+		}
+	}
+	if o.Mode == "" {
+		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_MODE")); v != "" {
+			o.Mode = v
+		}
+	}
+	if !o.WaitSet {
+		if v := strings.TrimSpace(os.Getenv("XP_CLEAN_WAIT")); v != "" {
+			b, err := parseBool(v)
+			if err != nil {
+				return fmt.Errorf("XP_CLEAN_WAIT: %w", err)
+			}
+			o.WaitSet = true
+			o.Wait = b
 		}
 	}
 	if !o.NotifySet {
@@ -123,9 +162,7 @@ func LoadAndMerge(o FlagOverrides) (conf.Resolved, error) {
 	if err := applyFlagOverrides(&policy, o); err != nil {
 		return conf.Resolved{}, err
 	}
-	if o.ForceDryRun {
-		policy.DryRun = true
-	}
+	applyDryRunGate(&policy, o)
 	return policy, nil
 }
 
@@ -145,9 +182,7 @@ func LoadPolicies(ctx context.Context, o FlagOverrides, restCfg *rest.Config) ([
 		if err := applyFlagOverrides(&p, o); err != nil {
 			return nil, err
 		}
-		if o.ForceDryRun {
-			p.DryRun = true
-		}
+		applyDryRunGate(&p, o)
 		return []conf.Resolved{p}, nil
 	}
 
@@ -167,16 +202,16 @@ func LoadPolicies(ctx context.Context, o FlagOverrides, restCfg *rest.Config) ([
 		if err := applyFlagOverrides(&policies[i], o); err != nil {
 			return nil, err
 		}
-		if o.ForceDryRun {
-			policies[i].DryRun = true
-		}
+		applyDryRunGate(&policies[i], o)
 	}
 	return policies, nil
 }
 
 func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
-	if o.DryRunSet {
-		policy.DryRun = o.DryRun
+	// Only --dry-run=true / XP_CLEAN_DRY_RUN=true may raise dryRun; never force live
+	// past a policy that still has dryRun: true.
+	if o.DryRunSet && o.DryRun {
+		policy.DryRun = true
 	}
 	if o.Scope != "" {
 		s, err := cleanup.ParseScope(o.Scope)
@@ -185,6 +220,16 @@ func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
 		}
 		policy.Deletion.Scope = s
 	}
+	if o.Mode != "" {
+		m, err := cleanup.ParseMode(o.Mode)
+		if err != nil {
+			return fmt.Errorf("invalid --mode: %w", err)
+		}
+		policy.Deletion.Mode = m
+	}
+	if o.WaitSet {
+		policy.Deletion.Wait = o.Wait
+	}
 	if o.NotifySet {
 		policy.Notifications.Enabled = o.Notify
 	}
@@ -192,6 +237,12 @@ func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
 		policy.Notifications.OnDryRun = o.NotifyOnDryRun
 	}
 	return nil
+}
+
+func applyDryRunGate(policy *conf.Resolved, o FlagOverrides) {
+	if o.AlwaysDryRun || o.ForceDryRun {
+		policy.DryRun = true
+	}
 }
 
 func parseBool(v string) (bool, error) {

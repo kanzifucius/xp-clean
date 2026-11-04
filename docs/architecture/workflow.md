@@ -1,6 +1,6 @@
 # Cleanup workflow
 
-One `run --once` pass: load policy → discover → build traces → plan → execute (dry-run gate) → audit → notify finished, with AroundRun started wrap.
+One `run --once` pass: load policy → discover → roots (or opt-in full traces) → plan → execute only with `--apply` and policy `dryRun: false` (foreground Delete; optional `--wait`) → audit → notify finished, with AroundRun started wrap.
 
 <div class="archify-embed" markdown="0">
 <iframe src="../cleanup-run-once.html" title="Xp-clean cleanup run-once workflow" loading="lazy" referrerpolicy="no-referrer"></iframe>

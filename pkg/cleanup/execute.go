@@ -16,6 +16,9 @@ type Deleter interface {
 
 // ExecuteOptions controls wait-after-delete and definition-layer gates.
 type ExecuteOptions struct {
+	// Wait enables poll-until-gone after each live delete. Default is false:
+	// issue the foreground Delete and continue without blocking.
+	Wait         bool
 	WaitTimeout  time.Duration
 	PollInterval time.Duration
 	Getter       ObjectGetter
@@ -36,8 +39,10 @@ type ExecuteResult struct {
 }
 
 // Execute runs a DeletePlan. When plan.DryRun is true, no deletes occur.
-// After each live delete it polls until the object is gone or waitTimeout elapses.
-// Definition steps run only when CountRemainingXRs reports zero XRs (when set).
+// Live deletes use the backend's foreground propagation. When opts.Wait is true,
+// Execute polls until the object is gone or waitTimeout elapses; otherwise it
+// continues immediately after issuing Delete. Definition steps run only when
+// CountRemainingXRs reports zero XRs (when set).
 func Execute(ctx context.Context, plan DeletePlan, policy string, del Deleter, opts ExecuteOptions) ExecuteResult {
 	res := ExecuteResult{
 		TraceID: plan.TraceID,
@@ -119,26 +124,28 @@ func Execute(ctx context.Context, plan DeletePlan, policy string, del Deleter, o
 			continue
 		}
 
-		wait := WaitUntilGone(ctx, opts.Getter, step.Ref, opts.WaitTimeout, opts.PollInterval)
-		if wait.Err != nil {
-			res.Errors = append(res.Errors, fmt.Sprintf("%s: wait: %v", step.Ref.Key(), wait.Err))
-			res.Skipped++
-			// Do not continue the plan after a wait failure — later definition
-			// steps must not race a still-terminating instance tree.
-			res.AuditEntries = append(res.AuditEntries, entry)
-			skipRemaining(&res, plan, policy, step, "wait_error")
-			return res
-		}
-		if wait.TimedOut {
-			reason := FormatStuckFinalizers(wait.Finalizers)
-			timeoutEntry := entry
-			timeoutEntry.Action = "wait-timeout"
-			timeoutEntry.Reason = reason
-			res.AuditEntries = append(res.AuditEntries, timeoutEntry)
-			res.Errors = append(res.Errors, fmt.Sprintf("%s: %s", step.Ref.Key(), reason))
-			res.Skipped++
-			skipRemaining(&res, plan, policy, step, "wait_timeout")
-			return res
+		if opts.Wait {
+			wait := WaitUntilGone(ctx, opts.Getter, step.Ref, opts.WaitTimeout, opts.PollInterval)
+			if wait.Err != nil {
+				res.Errors = append(res.Errors, fmt.Sprintf("%s: wait: %v", step.Ref.Key(), wait.Err))
+				res.Skipped++
+				// Do not continue the plan after a wait failure — later definition
+				// steps must not race a still-terminating instance tree.
+				res.AuditEntries = append(res.AuditEntries, entry)
+				skipRemaining(&res, plan, policy, step, "wait_error")
+				return res
+			}
+			if wait.TimedOut {
+				reason := FormatStuckFinalizers(wait.Finalizers)
+				timeoutEntry := entry
+				timeoutEntry.Action = "wait-timeout"
+				timeoutEntry.Reason = reason
+				res.AuditEntries = append(res.AuditEntries, timeoutEntry)
+				res.Errors = append(res.Errors, fmt.Sprintf("%s: %s", step.Ref.Key(), reason))
+				res.Skipped++
+				skipRemaining(&res, plan, policy, step, "wait_timeout")
+				return res
+			}
 		}
 
 		res.Deleted++

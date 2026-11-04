@@ -33,12 +33,14 @@ type TTLFile struct {
 
 // DeletionFile is YAML-friendly deletion config.
 type DeletionFile struct {
+	Mode             string `json:"mode" yaml:"mode"`
 	Scope            string `json:"scope" yaml:"scope"`
 	MaxTracesPerRun  int    `json:"maxTracesPerRun" yaml:"maxTracesPerRun"`
 	MaxDeletesPerRun int    `json:"maxDeletesPerRun" yaml:"maxDeletesPerRun"`
 	OrphanMode       string `json:"orphanMode" yaml:"orphanMode"`
 	DeletePaused     bool   `json:"deletePaused" yaml:"deletePaused"`
 	AllowXRDDeletion bool   `json:"allowXRDDeletion" yaml:"allowXRDDeletion"`
+	Wait             *bool  `json:"wait" yaml:"wait"`
 	WaitTimeout      string `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
@@ -150,6 +152,13 @@ func Resolve(p Policy) (Resolved, error) {
 	r.TTL = ttl
 
 	del := cleanup.DefaultDeletionConfig()
+	if p.Deletion.Mode != "" {
+		mode, err := cleanup.ParseMode(p.Deletion.Mode)
+		if err != nil {
+			return Resolved{}, err
+		}
+		del.Mode = mode
+	}
 	if p.Deletion.Scope != "" {
 		scope, err := cleanup.ParseScope(p.Deletion.Scope)
 		if err != nil {
@@ -168,6 +177,9 @@ func Resolve(p Policy) (Resolved, error) {
 	}
 	del.DeletePaused = p.Deletion.DeletePaused
 	del.AllowXRDDeletion = p.Deletion.AllowXRDDeletion
+	if p.Deletion.Wait != nil {
+		del.Wait = *p.Deletion.Wait
+	}
 	if p.Deletion.WaitTimeout != "" {
 		del.WaitTimeout = p.Deletion.WaitTimeout
 	}

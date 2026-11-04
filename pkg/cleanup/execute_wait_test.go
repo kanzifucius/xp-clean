@@ -77,6 +77,7 @@ func TestExecuteWaitTimeoutAuditsFinalizersAndStops(t *testing.T) {
 		}},
 	}
 	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{
+		Wait:         true,
 		WaitTimeout:  20 * time.Millisecond,
 		PollInterval: 5 * time.Millisecond,
 		Getter:       g,
@@ -107,12 +108,38 @@ func TestExecuteWaitsUntilGone(t *testing.T) {
 	del := &countingDeleter{}
 	g := &stickyGetter{goneAfter: 2}
 	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{
+		Wait:         true,
 		WaitTimeout:  time.Second,
 		PollInterval: time.Millisecond,
 		Getter:       g,
 	})
 	if res.Deleted != 1 || len(res.Errors) != 0 {
 		t.Fatalf("%#v polls=%d", res, g.calls)
+	}
+}
+
+func TestExecuteDefaultNoWaitSkipsPolling(t *testing.T) {
+	tr := sampleTrace()
+	plan := cleanup.BuildPlan(tr, cleanup.DefaultDeletionConfig(), false)
+	del := &countingDeleter{}
+	g := &stickyGetter{
+		obj: &unstructured.Unstructured{Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"finalizers": []interface{}{"composite.crossplane.io"},
+			},
+		}},
+	}
+	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{
+		Wait:         false,
+		WaitTimeout:  20 * time.Millisecond,
+		PollInterval: 5 * time.Millisecond,
+		Getter:       g,
+	})
+	if res.Deleted != 1 || len(res.Errors) != 0 {
+		t.Fatalf("no-wait should count delete immediately: %#v", res)
+	}
+	if g.calls != 0 {
+		t.Fatalf("getter must not be polled when wait is off, got %d calls", g.calls)
 	}
 }
 
@@ -126,6 +153,7 @@ func TestExecuteDefinitionGateBlocksWhenXRsRemain(t *testing.T) {
 	del := &countingDeleter{}
 	g := &goneGetter{}
 	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{
+		Wait:         true,
 		WaitTimeout:  time.Second,
 		PollInterval: time.Millisecond,
 		Getter:       g,
@@ -161,6 +189,7 @@ func TestExecuteDefinitionGateAllowsWhenZeroXRs(t *testing.T) {
 	del := &countingDeleter{}
 	g := &goneGetter{}
 	res := cleanup.Execute(context.Background(), plan, "test-stacks", del, cleanup.ExecuteOptions{
+		Wait:         true,
 		WaitTimeout:  time.Second,
 		PollInterval: time.Millisecond,
 		Getter:       g,

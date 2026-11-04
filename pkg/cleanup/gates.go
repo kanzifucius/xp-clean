@@ -8,24 +8,30 @@ import (
 
 // DeletionConfig holds safety gates and budgets for a run.
 type DeletionConfig struct {
+	Mode             DeletionMode  `json:"mode" yaml:"mode"`
 	Scope            DeletionScope `json:"scope" yaml:"scope"`
 	MaxTracesPerRun  int           `json:"maxTracesPerRun" yaml:"maxTracesPerRun"`
 	MaxDeletesPerRun int           `json:"maxDeletesPerRun" yaml:"maxDeletesPerRun"`
 	OrphanMode       string        `json:"orphanMode" yaml:"orphanMode"`
 	DeletePaused     bool          `json:"deletePaused" yaml:"deletePaused"`
 	AllowXRDDeletion bool          `json:"allowXRDDeletion" yaml:"allowXRDDeletion"`
-	WaitTimeout      string        `json:"waitTimeout" yaml:"waitTimeout"`
+	// Wait enables poll-until-gone after each live delete (default false).
+	Wait bool `json:"wait" yaml:"wait"`
+	// WaitTimeout is honoured only when Wait is true.
+	WaitTimeout string `json:"waitTimeout" yaml:"waitTimeout"`
 }
 
 // DefaultDeletionConfig returns safer MVP defaults.
 func DefaultDeletionConfig() DeletionConfig {
 	return DeletionConfig{
+		Mode:             ModeRoots,
 		Scope:            ScopeInstancesOnly,
 		MaxTracesPerRun:  20,
 		MaxDeletesPerRun: 100,
 		OrphanMode:       "report",
 		DeletePaused:     false,
 		AllowXRDDeletion: false,
+		Wait:             false,
 		WaitTimeout:      "30m",
 	}
 }

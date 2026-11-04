@@ -28,8 +28,33 @@ deletion:
 	if r.Deletion.Scope != cleanup.ScopeInstancesOnly {
 		t.Fatalf("scope %q", r.Deletion.Scope)
 	}
+	if r.Deletion.Mode != cleanup.ModeRoots {
+		t.Fatalf("mode default %q", r.Deletion.Mode)
+	}
+	if r.Deletion.Wait {
+		t.Fatal("wait must default false")
+	}
 	if r.TTL.DefaultTTL == 0 {
 		t.Fatal("expected default TTL")
+	}
+}
+
+func TestParseModeAndWait(t *testing.T) {
+	r, err := conf.Parse([]byte(`
+name: x
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+deletion:
+  mode: trace
+  wait: true
+  waitTimeout: 1m
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Deletion.Mode != cleanup.ModeTrace || !r.Deletion.Wait || r.Deletion.WaitTimeout != "1m" {
+		t.Fatalf("%#v", r.Deletion)
 	}
 }
 

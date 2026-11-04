@@ -14,12 +14,13 @@ Xp-clean targets **Crossplane v2-native** stacks only (**Namespaced** / modern *
 
 ## Features (MVP)
 
-- Discover CompositeResourceDefinitions and build parent→child **traces** (XR → `spec.crossplane.resourceRefs` → children; nested XRs supported).
-- Match eligibility with **labels and/or glob patterns** (AND when both are set) via `pkg/match`. GVK globs are **`group/version`** (kind not required).
-- Plan deletions with configurable **`deletion.scope`**: `instances-only` (default) or `all`.
-- **Dry-run by default** — boolean planner dry-run (client-side `DeletePlan` only; not kubectl API-server dry-run).
+- Discover CompositeResourceDefinitions and select **highest-parent** XRs (**roots** mode default). Full parent→child **traces** are opt-in (`--mode=trace`).
+- Match eligibility with **labels** (day-1) and/or **glob patterns** (advanced) via `pkg/match`. GVK globs are **`group/version`** (kind not required).
+- Plan deletions with **`deletion.scope: instances-only`** by default (`all` is advanced).
+- **Dry-run by default** — `xp-clean run --once` prints stacks matched / would delete; live needs `--apply` and policy `dryRun: false`.
+- Live Deletes use **foreground** propagation; **wait** after delete is opt-in (`--wait` / `deletion.wait`).
 - Skip paused resources by default (`crossplane.io/paused`) unless `deletePaused: true`.
-- Cobra CLI: `run`, `plan`, `trace`, `manager`, `version`, `completion`.
+- Cobra CLI: `run` (day-to-day), deprecated `plan`, `debug trace`, `manager`, `version`, `completion`.
 - Logging via **zap/logr** end-to-end (CLI and manager).
 
 ## Build
@@ -128,13 +129,16 @@ Sample file document (for `--config` only): [`config/samples/cleanuppolicy.yaml`
 |--------------|---------|
 | ConfigMaps / `--config` | In-cluster policies, or explicit file override |
 | `--policy-namespace` | Namespace for labelled ConfigMaps (default `xp-clean`) |
-| `selectors.requireLabels` / globs | Labels and/or globs (required non-empty) |
-| `deletion.scope` / `--scope` | `instances-only` (default) \| `all` |
-| `dryRun` / `--dry-run` | Boolean planner dry-run; unset flag keeps policy value (default true) |
+| `selectors.requireLabels` | Day-1 eligibility (globs are advanced) |
+| `deletion.mode` / `--mode` | `roots` (default) \| `trace` (full composition trees) |
+| `deletion.scope` / `--scope` | `instances-only` (default) \| `all` (advanced) |
+| `deletion.wait` / `--wait` | Opt-in poll-until-gone (default off) |
+| `dryRun` / `--apply` | Policy dry-run gate; CLI defaults to dry-run plan; `--apply` for live (still needs policy `dryRun: false`) |
+| `--dry-run` | Compatibility boolean; prefer `--apply` for live |
 | `--fail-on-blocked` | Exit **3** when the run completed with blocked plans |
-| `observability.notifications` | Optional Teams (MVP) / Slack (schema-ready) run hooks — see below |
+| `observability.notifications` | Advanced: optional Teams (MVP) / Slack (schema-ready) — see below |
 | `--notify`, `--notify-on-dry-run` | Override `notifications.enabled` / `onDryRun` |
-| `--kubeconfig`, `--context`, `-n` | kubectl-style access; `-n` is for `trace` only (**rejected** on `run`/`plan`) |
+| `--kubeconfig`, `--context`, `-n` | kubectl-style access; `-n` is for `debug trace` only (**rejected** on `run`/`plan`) |
 
 Audit events go to **stdout** JSON only for now — no audit ConfigMap / object-storage retention sink.
 
@@ -165,26 +169,25 @@ SSRF host allow-lists are guidance-only for MVP (https-only client; no redirect 
 ## CLI
 
 ```text
-xp-clean run --once [--config PATH] [--policy-namespace NS] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
-xp-clean plan [--config PATH] [--policy-namespace NS] [--scope …] [--fail-on-blocked] [-o json|yaml]
-xp-clean trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
-xp-clean manager [--config PATH] [--policy-namespace NS]
+xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
+xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--fail-on-blocked] [-o json|yaml]
+xp-clean debug trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
+xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait]
 xp-clean version [-o short|json|yaml]
 xp-clean completion bash|zsh|fish|powershell
 ```
 
-Logging uses zap/logr end-to-end, but interactive CLI commands are quiet by default (error-only on stderr). Use `-v=1` / `--log-level=info` for detail (`manager` defaults to info). Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `trace -o json|yaml`, audit JSON on `run`) stays on stdout.
+`run --once` is the day-to-day command (dry-run plan by default). `plan` is a deprecated machine-output wrapper. `debug trace` inspects one tree (`-n` only there). Logging uses zap/logr end-to-end, but interactive CLI commands are quiet by default (error-only on stderr). Use `-v=1` / `--log-level=info` for detail (`manager` defaults to info). Encoder flags: `--zap-devel`, `--zap-encoder`. Machine output (`plan`, `debug trace -o json|yaml`, audit JSON on `run`) stays on stdout.
 
 Exit codes: `0` success; `1` runtime failure; `2` usage/validation; `3` blocked plans with `--fail-on-blocked`.
 
 ## Run a dry-run locally
 
-Requires a kubeconfig that can list XRDs and the XR GVKs your selectors match. For local file use, pass **`--config` explicitly**:
+Requires a kubeconfig that can list XRDs and the XR GVKs your selectors match. For local file use, pass **`--config` explicitly**. `run` defaults to a dry-run plan:
 
 ```bash
 go run ./cmd/xp-clean run --once \
   --config config/samples/cleanuppolicy.yaml \
-  --dry-run=true \
   --kubeconfig "$HOME/.kube/config"
 ```
 
@@ -193,13 +196,13 @@ go run ./cmd/xp-clean plan --config config/samples/cleanuppolicy.yaml -o json
 ```
 
 ```bash
-go run ./cmd/xp-clean trace \
+go run ./cmd/xp-clean debug trace \
   --name test-db -n xp-test-1 \
   --group db.dev.example.org \
   --kind XDB
 ```
 
-Live deletes require `dryRun: false` in the policy **and** `--dry-run=false`. Prefer dry-run until the plan looks correct. Xp-clean never strips Crossplane finalizers.
+Live deletes require `--apply` **and** policy `dryRun: false`. Deletes use foreground propagation; add `--wait` to poll until gone. Prefer the default dry-run roots plan until stacks matched / would delete looks correct. Xp-clean never strips Crossplane finalizers.
 
 ## In-cluster (Helm)
 
@@ -219,11 +222,12 @@ From a checkout: `helm upgrade --install xp-clean ./deploy/helm/xp-clean -n xp-c
 ## Safety notes
 
 - Default scope deletes **instances only**.
-- Live deletes honour `deletion.waitTimeout`: after each delete Xp-clean polls until the object is gone (or times out). Stuck finalizers are audited; Crossplane finalizers are **never** stripped.
+- Live deletes use **foreground** propagation. Polling after delete is **opt-in** (`deletion.wait` / `--wait`); when enabled, `deletion.waitTimeout` applies and stuck finalizers are audited. Crossplane finalizers are **never** stripped.
+- Default cleanup mode is **roots** (highest-parent XRs); full composition traces are opt-in (`deletion.mode: trace` / `--mode=trace`).
 - With `scope: all`, traces attach CompositionRevision → Composition → XRD; delete order matches that stack. Definition deletes require **zero remaining XRs** for the XRD, and XRD also needs `allowXRDDeletion: true`.
 - `xp-clean.io/keep=true` skips the whole trace; paused resources are skipped unless `deletePaused: true`.
 - Namespace alone never implies eligibility — use policy labels and/or globs.
-- Eligibility never comes from `-n` on `run`/`plan`.
+- Eligibility never comes from `-n` on `run`/`plan` (`-n` is for `debug trace` only).
 
 ## Licence
 

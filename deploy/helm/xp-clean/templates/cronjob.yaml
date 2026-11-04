@@ -41,7 +41,9 @@ spec:
                 - run
                 - --once
                 - --policy-namespace={{ include "xp-clean.namespace" . }}
-                - --dry-run={{ .Values.dryRun }}
+                {{- if not .Values.dryRun }}
+                - --apply
+                {{- end }}
                 {{- with .Values.cronjob.extraArgs }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}

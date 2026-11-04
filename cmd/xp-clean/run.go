@@ -26,12 +26,18 @@ func newRunCommand(g *options.Global) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run a single cleanup pass (CronJob / Job friendly)",
-		Long: `Run invokes the shared cleanup.Runner once per loaded policy and exits.
+		Short: "Day-to-day cleanup: dry-run plan by default; live deletes with --apply",
+		Long: `Run is the primary day-to-day command. It discovers eligible stacks
+(highest-parent roots by default) and prints a dry-run plan of what would be
+deleted. Use --mode=trace for full parent→child composition trees.
+
+Live deletes require both --apply (or compatibility --dry-run=false) and
+policy dryRun: false. Without --apply, run always plans only — even when the
+policy document already has dryRun: false. Live Deletes use foreground
+propagation; --wait opts into poll-until-gone (default is no wait).
 
 Policies load from labelled ConfigMaps in --policy-namespace (default xp-clean)
-unless --config points at an explicit file override. Dry-run defaults come from
-each policy (default true) unless --dry-run is set. --scope overrides
+unless --config points at an explicit file override. --scope overrides
 deletion.scope (instances-only|all). --fail-on-blocked exits 3 when any plan
 is blocked. Optional Teams/Slack notifications wrap each RunOnce and never
 change cleanup exit codes. Use manager for scheduled loops.`,
@@ -99,8 +105,9 @@ change cleanup exit codes. Use manager for scheduled loops.`,
 // loadPoliciesAndREST loads file policies before touching kubeconfig when
 // --config / XP_CLEAN_CONFIG is set, so usage errors (bad --scope, etc.) win
 // over missing kubeconfig. ConfigMap mode needs REST first.
-func loadPoliciesAndREST(cmd *cobra.Command, g *options.Global, pf *options.PolicyFlags, forceDryRun bool) ([]conf.Resolved, *rest.Config, error) {
-	o := pf.Overrides(cmd.Flags(), forceDryRun)
+// alwaysDryRun is true for plan (never live).
+func loadPoliciesAndREST(cmd *cobra.Command, g *options.Global, pf *options.PolicyFlags, alwaysDryRun bool) ([]conf.Resolved, *rest.Config, error) {
+	o := pf.Overrides(cmd.Flags(), alwaysDryRun)
 	path := clipolicy.ResolveConfigPath(o.ConfigPath)
 
 	if path != "" {

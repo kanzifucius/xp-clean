@@ -1,5 +1,6 @@
-# Second per-team policy ConfigMap (multi-tenancy example).
+# Second per-team policy ConfigMap (multi-tenancy / advanced glob example).
 # Same xp-clean namespace; different selectors / TTL from team-a.
+# Day-1 installs can ignore this sample — see Concepts → Policy (Advanced).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,9 +12,7 @@ metadata:
 data:
   policy.yaml: |
     name: team-b
-    schedule: "0 */6 * * *"
     dryRun: true
-    timezone: Europe/London
     selectors:
       globs:
         namespaces: ["team-b-*"]
@@ -24,14 +23,6 @@ data:
     ttl:
       respectResourceTTL: true
       defaultTTL: 72h
-      applyDefaultTTLIfMissing: false
     deletion:
+      mode: roots
       scope: instances-only
-      maxTracesPerRun: 10
-      maxDeletesPerRun: 50
-      orphanMode: report
-      deletePaused: false
-      allowXRDDeletion: false
-      waitTimeout: 30m
-    observability:
-      verbosity: normal

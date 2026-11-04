@@ -40,13 +40,51 @@ func TestRootHelp(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := out.String()
-	for _, want := range []string{"run", "plan", "trace", "manager", "version", "completion", "--log-level", "-v"} {
+	for _, want := range []string{"run", "plan", "debug", "manager", "version", "completion", "--log-level", "-v"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("help missing %q:\n%s", want, s)
 		}
 	}
+	// Root trace is hidden; happy-path help must not advertise it as a primary command.
+	if strings.Contains(s, "  trace ") {
+		t.Fatalf("root help must not list hidden trace as a primary command:\n%s", s)
+	}
 	if strings.Contains(s, "kubectl-xpclean") {
 		t.Fatal("standalone docs only; kubectl-xpclean must not appear in help")
+	}
+}
+
+func TestDebugTraceHelp(t *testing.T) {
+	cmd := newRootCommand()
+	cmd.SetArgs([]string{"debug", "trace", "--help"})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{"--name", "--group", "--kind", "--namespace"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("debug trace help missing %q:\n%s", want, s)
+		}
+	}
+}
+
+func TestRunHelpMentionsApply(t *testing.T) {
+	cmd := newRootCommand()
+	cmd.SetArgs([]string{"run", "--help"})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{"--apply", "--mode", "--wait", "fail-on-blocked", "ConfigMap", "dry-run"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("run help missing %q:\n%s", want, s)
+		}
 	}
 }
 
@@ -105,6 +143,9 @@ func TestRunRejectsNamespace(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "not valid on run/plan") {
 		t.Fatalf("unexpected err: %v", err)
+	}
+	if !strings.Contains(err.Error(), "debug trace") {
+		t.Fatalf("expected debug trace hint, got: %v", err)
 	}
 }
 
@@ -177,19 +218,13 @@ func TestCompletionBash(t *testing.T) {
 	}
 }
 
-func TestRunHelpMentionsFailOnBlockedAndConfigMap(t *testing.T) {
+func TestPlanDeprecated(t *testing.T) {
 	cmd := newRootCommand()
-	cmd.SetArgs([]string{"run", "--help"})
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-	if err := cmd.Execute(); err != nil {
+	plan, _, err := cmd.Find([]string{"plan"})
+	if err != nil {
 		t.Fatal(err)
 	}
-	s := out.String()
-	for _, want := range []string{"fail-on-blocked", "ConfigMap", "dry-run"} {
-		if !strings.Contains(s, want) {
-			t.Fatalf("run help missing %q:\n%s", want, s)
-		}
+	if plan.Deprecated == "" {
+		t.Fatal("plan should be marked deprecated")
 	}
 }

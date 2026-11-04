@@ -148,14 +148,14 @@ For a **private fork** image, create a docker-registry secret and pass `imagePul
 |-------|---------|---------|
 | `image.tag` | `v0.1.0-rc.1` | Pin the GHCR image (prefer immutable `:vX.Y.Z`) |
 | `imagePullSecrets` | `[]` | Optional; needed only for private fork pulls |
-| `dryRun` | `true` | Passed as `--dry-run` on the CronJob / manager |
+| `dryRun` | `true` | When `false`, CronJob / manager get `--apply` |
 | `cronjob.schedule` | `0 */6 * * *` | Kubernetes CronJob schedule |
 | `cronjob.enabled` | `true` | Default ops path |
 | `manager.enabled` | `false` | Optional secondary Deployment |
 | `resources` | small requests/limits | Pod resource settings |
 | `policy.create` | `true` | Install the sample policy ConfigMap |
 
-Live deletes need `dryRun: false` in **both** chart values and the policy ConfigMap document. Edit selectors on the sample policy before enabling deletes. Full reference: the chart [`README.md`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md) and [`values.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml).
+Live deletes need chart `dryRun: false` (passes `--apply`) **and** policy ConfigMap `dryRun: false`. Edit label selectors on the sample policy before enabling deletes. Full reference: the chart [`README.md`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/README.md) and [`values.yaml`](https://github.com/kanzifucius/xp-clean/blob/main/deploy/helm/xp-clean/values.yaml).
 
 ## Maintainer: GHCR visibility
 

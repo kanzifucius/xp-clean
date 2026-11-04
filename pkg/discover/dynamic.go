@@ -38,15 +38,23 @@ func (d *DynamicClient) Get(ctx context.Context, gvr schema.GroupVersionResource
 	return d.Client.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-// Delete deletes one object.
+// ForegroundDeleteOptions returns DeleteOptions with DeletionPropagation=Foreground
+// so the API server enforces dependent cleanup (not Background/Orphan).
+func ForegroundDeleteOptions() metav1.DeleteOptions {
+	propagation := metav1.DeletePropagationForeground
+	return metav1.DeleteOptions{PropagationPolicy: &propagation}
+}
+
+// Delete deletes one object using foreground propagation.
 func (d *DynamicClient) Delete(ctx context.Context, gvr schema.GroupVersionResource, namespace, name string) error {
 	if d == nil || d.Client == nil {
 		return fmt.Errorf("dynamic client not configured")
 	}
+	opts := ForegroundDeleteOptions()
 	if namespace == "" {
-		return d.Client.Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
+		return d.Client.Resource(gvr).Delete(ctx, name, opts)
 	}
-	return d.Client.Resource(gvr).Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	return d.Client.Resource(gvr).Namespace(namespace).Delete(ctx, name, opts)
 }
 
 // Fetcher adapts DynamicClient to trace.ObjectFetcher using GVK→resource mapping.

@@ -4,22 +4,26 @@ How a planned run stays safe once eligibility has selected stacks. Matching rule
 
 ## Safety gates
 
-- **Dry-run by default** — planner dry-run; live deletes need policy `dryRun: false` **and** `--dry-run=false`.
+- **Dry-run by default** — `run --once` always plans first; live deletes need policy `dryRun: false` **and** `--apply` (compatibility: `--dry-run=false`).
+- **Roots by default** — `deletion.mode: roots` plans highest-parent XRs only; opt in to full trees with `mode: trace` / `--mode=trace`.
+- **Foreground deletes** — live Deletes always use `DeletionPropagation=Foreground`.
+- **Wait is opt-in** — default is no poll; `--wait` / `deletion.wait: true` honours `waitTimeout` and stuck-finalizer audit.
 - **Paused resources** — skipped by default (`crossplane.io/paused`) unless `deletePaused: true`.
-- **Keep label** — `xp-clean.io/keep=true` skips the whole trace.
-- **Budgets** — `maxTracesPerRun` / `maxDeletesPerRun`.
+- **Keep label** — `xp-clean.io/keep=true` skips the whole stack.
+- **Budgets** — advanced: `maxTracesPerRun` / `maxDeletesPerRun`.
 - **Finalizers** — Xp-clean never strips Crossplane finalizers; cloud objects are deleted by Crossplane’s own controllers.
 - **Claims / LegacyCluster** — out of scope; XR-only / v2-native path.
-- **Orphans** — `orphanMode: report` (MVP) surfaces orphans without inventing parallel ownership.
+- **Orphans** — advanced: `orphanMode: report` (MVP) surfaces orphans without inventing parallel ownership.
 
 ## Run flow (summary)
 
 ```text
 discover XRDs / XRs
   → match labels/globs + TTL
-  → build traces (parent→child)
+  → highest parents (roots mode) OR build full traces (trace mode)
   → plan deletions (scope + gates)
-  → execute (unless dry-run)
+  → execute only with --apply and policy dryRun: false
+       (foreground Delete; optional --wait poll)
   → audit JSON on stdout (+ optional Teams notify)
 ```
 

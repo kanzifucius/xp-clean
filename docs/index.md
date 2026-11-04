@@ -11,11 +11,11 @@ It targets **v2-native** stacks only (**Namespaced** and modern **Cluster** XRs)
 
 ## What it does
 
-1. **Discover** CompositeResourceDefinitions and build parent→child **traces** (XR → `spec.crossplane.resourceRefs` → children; nested XRs supported).
-2. **Select** eligible stacks with **labels and/or glob patterns** (AND when both are set). Namespace alone never implies eligibility.
-3. **Plan** deletions under configurable `deletion.scope`: `instances-only` (default) or `all`.
-4. **Execute** safely — dry-run by default, budgets, skip paused resources, never strip Crossplane finalizers.
-5. **Notify** (optional) via Microsoft Teams Workflows on run start / finish / failure.
+1. **Discover** CompositeResourceDefinitions and select **highest-parent** XRs (roots mode). Full parent→child **traces** are opt-in (`--mode=trace`).
+2. **Select** eligible stacks with **labels** (day-1) and/or **glob patterns** (advanced). Namespace alone never implies eligibility.
+3. **Plan** with `xp-clean run --once` — dry-run by default (`deletion.mode: roots`, `deletion.scope: instances-only`).
+4. **Execute** only with `--apply` and policy `dryRun: false` (foreground Delete; `--wait` opt-in); skip paused resources; never strip Crossplane finalizers.
+5. **Notify** (optional, advanced) via Microsoft Teams Workflows on run start / finish / failure.
 
 ## Where to start
 

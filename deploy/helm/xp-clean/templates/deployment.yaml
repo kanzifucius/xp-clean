@@ -32,7 +32,9 @@ spec:
           args:
             - manager
             - --policy-namespace={{ include "xp-clean.namespace" . }}
-            - --dry-run={{ .Values.dryRun }}
+            {{- if not .Values.dryRun }}
+            - --apply
+            {{- end }}
             {{- with .Values.manager.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

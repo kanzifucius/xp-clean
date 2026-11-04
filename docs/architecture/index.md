@@ -7,9 +7,10 @@ Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery 
 - Dynamic XRD discovery + instance trace build (**no claims**)
 - Eligibility via labels and/or globs + TTL (`pkg/match`); GVK globs are `group/version`
 - `deletion.scope` with default `instances-only`
-- Boolean dry-run planner + optional deletes; skip paused by default
+- Boolean dry-run planner by default; live deletes via `--apply` + policy `dryRun: false`; skip paused by default
+- Cleanup mode `roots` (default) or opt-in `trace`; foreground Delete propagation; wait after delete opt-in
 - File / labelled ConfigMap policy (multi-tenant); explicit `--config` for file override
-- Cobra CLI: `run` / `plan` / `trace` / `manager` / `version` / `completion`
+- Cobra CLI: `run` (day-to-day) / deprecated `plan` / `debug trace` / `manager` / `version` / `completion`
 - Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`
 - Optional Teams Workflows notification hooks around `RunOnce`
 - GoReleaser + **public** GHCR on SemVer tags (anonymous pull; see [Install](../install.md#maintainer-ghcr-visibility)); CI with golangci-lint

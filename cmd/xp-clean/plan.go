@@ -20,13 +20,17 @@ func newPlanCommand(g *options.Global) *cobra.Command {
 		output string
 	)
 	cmd := &cobra.Command{
-		Use:   "plan",
-		Short: "Print DeletePlans for all eligible traces (always dry-run)",
-		Long: `Plan builds DeletePlans for every eligible trace and prints them on stdout.
-Always forces planner dry-run (no deletes). Loads labelled ConfigMaps from
---policy-namespace unless --config is set. --scope selects deletion.scope for
-the plan contents; it does not mean "plan only definitions".
---fail-on-blocked exits 3 when any plan is blocked.`,
+		Use:        "plan",
+		Short:      "Deprecated: print DeletePlans as JSON/YAML (same as dry-run run)",
+		Deprecated: "use \"xp-clean run --once\" for the day-to-day dry-run plan; plan remains a thin machine-output wrapper",
+		Long: `Plan builds DeletePlans for every eligible stack and prints them on stdout.
+Always forces planner dry-run (no deletes). Prefer "xp-clean run --once" for
+interactive dry-run plans; this subcommand remains for scripts that need
+-o json|yaml.
+
+Loads labelled ConfigMaps from --policy-namespace unless --config is set.
+--scope selects deletion.scope for the plan contents; it does not mean
+"plan only definitions". --fail-on-blocked exits 3 when any plan is blocked.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)

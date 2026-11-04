@@ -30,7 +30,8 @@ func newManagerCommand(g *options.Global) *cobra.Command {
 		Long: `Manager loads labelled policy ConfigMaps from --policy-namespace (or an
 explicit --config file) and runs the shared cleanup.Runner on an interval
 derived from policy.schedule. Multiple ConfigMaps are supported for per-team
-policies. Each scheduled RunOnce uses the same notification hooks as run --once.
+policies. Each scheduled RunOnce uses the same dry-run / --apply gate as run
+--once (default dry-run plan; live needs --apply and policy dryRun: false).
 Full controller-runtime (leader election, health probes, CR watches) is deferred;
 flags for those will land with the CRD.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {

@@ -68,7 +68,7 @@ type XRCounter interface {
 	CountXRs(ctx context.Context, info discover.XRDInfo) (int, error)
 }
 
-// Runner orchestrates discover → match → trace → plan → execute.
+// Runner orchestrates discover → match → (optional trace) → plan → execute.
 type Runner struct {
 	Backend ClusterBackend
 	Audit   *audit.Logger
@@ -91,14 +91,22 @@ func (r *Runner) RunOnce(ctx context.Context, policy PolicyView) (RunResult, err
 		r.Audit = audit.NewLogger(r.Out)
 	}
 
+	mode, err := ParseMode(string(policy.Deletion.Mode))
+	if err != nil {
+		return RunResult{}, err
+	}
+
 	roots, err := r.Backend.DiscoverRoots(ctx, policy.Selectors, policy.TTL, now)
 	if err != nil {
 		return RunResult{}, err
 	}
 
-	waitTimeout, err := ParseWaitTimeout(policy.Deletion.WaitTimeout)
-	if err != nil {
-		return RunResult{}, err
+	var waitTimeout time.Duration
+	if policy.Deletion.Wait {
+		waitTimeout, err = ParseWaitTimeout(policy.Deletion.WaitTimeout)
+		if err != nil {
+			return RunResult{}, err
+		}
 	}
 
 	// Per-XRD counts of eligible roots in this run (for plan-time zero-XR gate).
@@ -122,9 +130,9 @@ func (r *Runner) RunOnce(ctx context.Context, policy PolicyView) (RunResult, err
 
 	for _, root := range roots {
 		metrics.Global.TracesEligible.Add(1)
-		tr, err := r.Backend.BuildTrace(ctx, root.XR)
+		tr, err := buildStackTrace(ctx, r.Backend, root, mode, now)
 		if err != nil {
-			return result, fmt.Errorf("build trace: %w", err)
+			return result, err
 		}
 		// Mark root eligibility / keep / paused from candidate.
 		for i := range tr.Nodes {
@@ -166,6 +174,7 @@ func (r *Runner) RunOnce(ctx context.Context, policy PolicyView) (RunResult, err
 
 	for i, p := range plans {
 		opts := ExecuteOptions{
+			Wait:         policy.Deletion.Wait,
 			WaitTimeout:  waitTimeout,
 			PollInterval: r.PollInterval,
 			Getter:       getter,
@@ -186,4 +195,19 @@ func (r *Runner) RunOnce(ctx context.Context, policy PolicyView) (RunResult, err
 		}
 	}
 	return result, nil
+}
+
+func buildStackTrace(ctx context.Context, backend ClusterBackend, root discover.RootCandidate, mode DeletionMode, now time.Time) (trace.Trace, error) {
+	switch mode {
+	case ModeRoots:
+		return trace.RootOnlyFromXR(root.XR, now), nil
+	case ModeTrace:
+		tr, err := backend.BuildTrace(ctx, root.XR)
+		if err != nil {
+			return trace.Trace{}, fmt.Errorf("build trace: %w", err)
+		}
+		return tr, nil
+	default:
+		return trace.Trace{}, fmt.Errorf("unsupported deletion.mode %q", mode)
+	}
 }
