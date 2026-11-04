@@ -45,4 +45,8 @@ func TestFormatObjectLine(t *testing.T) {
 	if got != "Composition c1 — definition_scope_all" {
 		t.Fatalf("%q", got)
 	}
+	got = notify.FormatObjectLine(notify.ObjectSummary{Kind: "XDemo", Namespace: "ns", Name: "bare"})
+	if got != "XDemo ns/bare" {
+		t.Fatalf("empty reason must omit separator: %q", got)
+	}
 }

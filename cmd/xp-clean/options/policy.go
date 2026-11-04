@@ -10,6 +10,7 @@ import (
 	"github.com/kanzifucius/xp-clean/internal/conf"
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
 	"github.com/kanzifucius/xp-clean/pkg/discover"
+	"github.com/kanzifucius/xp-clean/pkg/notify"
 	"github.com/kanzifucius/xp-clean/pkg/trace"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/rest"
@@ -196,16 +197,19 @@ func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved, opts
 	}
 }
 
+// formatStepObject renders Kind namespace/name — reason using the shared notify
+// formatter so quiet CLI and Teams/Slack Event object lines stay consistent.
 func formatStepObject(s cleanup.DeleteStep) string {
 	kind := s.Ref.Kind
 	if kind == "" {
 		kind = string(s.Kind)
 	}
-	name := s.Ref.Name
-	if s.Ref.Namespace != "" {
-		name = s.Ref.Namespace + "/" + s.Ref.Name
-	}
-	return kind + " " + name
+	return notify.FormatObjectLine(notify.ObjectSummary{
+		Kind:      kind,
+		Namespace: s.Ref.Namespace,
+		Name:      s.Ref.Name,
+		Reason:    s.Reason,
+	})
 }
 
 // RejectNamespaceOnRunPlan enforces the locked rule that -n / --namespace is

@@ -36,6 +36,23 @@ func xrStep(kind, ns, name string) cleanup.DeleteStep {
 	}
 }
 
+func TestFormatStepObjectMatchesNotifyLine(t *testing.T) {
+	step := xrStep("DBXWorkspace", "ns", "name")
+	got := formatStepObject(step)
+	want := "DBXWorkspace ns/name — instance_root"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+	bare := cleanup.DeleteStep{
+		Ref:    trace.ObjectRef{Kind: "Composition", Name: "c"},
+		Kind:   trace.NodeComposition,
+		Action: "delete",
+	}
+	if formatStepObject(bare) != "Composition c" {
+		t.Fatalf("empty reason must omit separator: %q", formatStepObject(bare))
+	}
+}
+
 func TestPrintSummaryQuietRootsInstancesOnly(t *testing.T) {
 	pol := samplePolicy(cleanup.ModeRoots, cleanup.ScopeInstancesOnly)
 	result := cleanup.RunResult{
@@ -56,8 +73,8 @@ func TestPrintSummaryQuietRootsInstancesOnly(t *testing.T) {
 	wantLines := []string{
 		"policy=dbxworkspace-local dryRun=true mode=roots scope=instances-only",
 		"would delete 2",
-		"  DBXWorkspace dai-platform-jorge/sofia-workspace",
-		"  DBXWorkspace dai-platform-thomas/cross-workspace",
+		"  DBXWorkspace dai-platform-jorge/sofia-workspace — instance_root",
+		"  DBXWorkspace dai-platform-thomas/cross-workspace — instance_root",
 	}
 	for _, line := range wantLines {
 		if !strings.Contains(got, line) {
@@ -102,7 +119,7 @@ func TestPrintSummaryBlockedStillListed(t *testing.T) {
 	var buf bytes.Buffer
 	PrintSummary(&buf, result, pol, SummaryOptions{})
 	got := buf.String()
-	if !strings.Contains(got, "would delete 1") || !strings.Contains(got, "  XDemo ns/ok") {
+	if !strings.Contains(got, "would delete 1") || !strings.Contains(got, "  XDemo ns/ok — instance_root") {
 		t.Fatalf("compact list missing:\n%s", got)
 	}
 	if !strings.Contains(got, "stack xr/paused blocked:") {
@@ -137,8 +154,8 @@ func TestPrintSummaryVerboseShowsTracesAndStacks(t *testing.T) {
 	if !strings.Contains(got, "stack xr/one would delete steps=1") {
 		t.Fatalf("verbose must print stack block:\n%s", got)
 	}
-	if !strings.Contains(got, "1. delete XDemo ns/one") {
-		t.Fatalf("verbose must number steps:\n%s", got)
+	if !strings.Contains(got, "1. delete XDemo ns/one — instance_root") {
+		t.Fatalf("verbose must number steps with reason:\n%s", got)
 	}
 }
 
