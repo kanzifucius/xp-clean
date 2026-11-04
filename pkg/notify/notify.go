@@ -62,11 +62,21 @@ type Notifier interface {
 	Notify(ctx context.Context, ev Event) error
 }
 
+// ErrSkipped means an event was intentionally not delivered (disabled, filtered,
+// or no configured sink). Callers must not treat it as a delivery failure.
+var ErrSkipped = errors.New("notify skipped")
+
 // Noop is a silent notifier used when notifications are disabled or misconfigured.
 type Noop struct{}
 
 // Notify implements Notifier.
 func (Noop) Notify(context.Context, Event) error { return nil }
+
+// Skipped always returns ErrSkipped (enabled policy but nothing to deliver to).
+type Skipped struct{}
+
+// Notify implements Notifier.
+func (Skipped) Notify(context.Context, Event) error { return ErrSkipped }
 
 // Multi fans out to several sinks, isolating per-sink errors.
 type Multi struct {

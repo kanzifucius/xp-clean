@@ -61,6 +61,6 @@ Slack sinks share the same `Event.Objects` fields when implemented; MVP Slack re
 
 ## Failure isolation
 
-Notify failures are logged and ignored for exit codes. Missing webhook config is a noop. Partial multi-sink failure does not fail cleanup. Audit JSON remains authoritative for what was deleted.
+Each delivery attempt prints a short stderr status (`notify started: ok`, `notify finished: failed: …`) and a structured log line. Failures use logr **Error** (visible under quiet CLI); successes use logr **Info** (needs `-v` / manager’s info default) plus the stderr line. Intentional skips (disabled, filtered, or no webhook) stay silent. Notify failures never change cleanup exit codes. Partial multi-sink failure does not fail cleanup. The `run` summary / audit JSON remains authoritative for what was deleted.
 
 Sequence diagram: [Teams sequence](../architecture/sequence.md).

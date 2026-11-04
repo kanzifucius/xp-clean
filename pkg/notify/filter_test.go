@@ -1,6 +1,8 @@
 package notify_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/kanzifucius/xp-clean/pkg/notify"
@@ -90,5 +92,16 @@ func TestFilterShouldNotify(t *testing.T) {
 				t.Fatalf("got %v want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestFilteringReturnsErrSkipped(t *testing.T) {
+	f := notify.Filtering{
+		Inner:  notify.Noop{},
+		Filter: notify.Filter{Enabled: false, NotifyOn: []string{"started"}},
+	}
+	err := f.Notify(context.Background(), notify.Event{Kind: notify.KindStarted})
+	if !errors.Is(err, notify.ErrSkipped) {
+		t.Fatalf("got %v, want ErrSkipped", err)
 	}
 }

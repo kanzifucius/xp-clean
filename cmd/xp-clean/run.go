@@ -91,8 +91,8 @@ change cleanup exit codes. Use manager for scheduled loops.`,
 				}
 				result, err := notify.AroundRun(ctx, notifier, meta, func(ctx context.Context) (cleanup.RunResult, error) {
 					return runner.RunOnce(ctx, clipolicy.ToPolicyView(policy))
-				}, func(nerr error) {
-					g.Logger.Info("notify warning", "err", nerr)
+				}, func(kind notify.EventKind, nerr error) {
+					options.LogNotifyResult(g.Logger, cmd.ErrOrStderr(), policy.Name, kind, nerr)
 				})
 				if err != nil {
 					return exit.RuntimeErr(fmt.Errorf("run failed (%s): %w", policy.Name, err))

@@ -30,7 +30,7 @@ func (r *recordingNotifier) Notify(_ context.Context, ev notify.Event) error {
 func TestAroundRunPreservesCleanupError(t *testing.T) {
 	n := &recordingNotifier{err: errors.New("webhook down")}
 	want := errors.New("discover failed")
-	var notifyErrs []error
+	var notifyFails []error
 
 	_, err := notify.AroundRun(context.Background(), n, notify.RunMeta{
 		Policy: "p",
@@ -39,8 +39,10 @@ func TestAroundRunPreservesCleanupError(t *testing.T) {
 		RunID:  "run-1",
 	}, func(context.Context) (cleanup.RunResult, error) {
 		return cleanup.RunResult{}, want
-	}, func(e error) {
-		notifyErrs = append(notifyErrs, e)
+	}, func(_ notify.EventKind, e error) {
+		if e != nil {
+			notifyFails = append(notifyFails, e)
+		}
 	})
 	if !errors.Is(err, want) {
 		t.Fatalf("cleanup err = %v, want %v", err, want)
@@ -51,13 +53,14 @@ func TestAroundRunPreservesCleanupError(t *testing.T) {
 	if n.events[0].Kind != notify.KindStarted || n.events[1].Kind != notify.KindFailed {
 		t.Fatalf("kinds %#v", n.events)
 	}
-	if len(notifyErrs) == 0 {
-		t.Fatal("expected notify warnings")
+	if len(notifyFails) != 2 {
+		t.Fatalf("expected 2 notify failures, got %d", len(notifyFails))
 	}
 }
 
 func TestAroundRunFinishedOnSuccess(t *testing.T) {
 	n := &recordingNotifier{}
+	var oks []notify.EventKind
 	_, err := notify.AroundRun(context.Background(), n, notify.RunMeta{
 		Policy: "p",
 		DryRun: true,
@@ -67,7 +70,12 @@ func TestAroundRunFinishedOnSuccess(t *testing.T) {
 		return cleanup.RunResult{
 			Results: []cleanup.ExecuteResult{{Planned: 3, Skipped: 3, DryRun: true}},
 		}, nil
-	}, nil)
+	}, func(kind notify.EventKind, e error) {
+		if e != nil {
+			t.Fatalf("unexpected notify err: %v", e)
+		}
+		oks = append(oks, kind)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,6 +84,28 @@ func TestAroundRunFinishedOnSuccess(t *testing.T) {
 	}
 	if n.events[1].Kind != notify.KindFinished || n.events[1].Planned != 3 {
 		t.Fatalf("%#v", n.events[1])
+	}
+	if len(oks) != 2 || oks[0] != notify.KindStarted || oks[1] != notify.KindFinished {
+		t.Fatalf("oks=%v", oks)
+	}
+}
+
+func TestAroundRunSkippedDoesNotCallback(t *testing.T) {
+	n := notify.Filtering{
+		Inner:  &recordingNotifier{},
+		Filter: notify.Filter{Enabled: false, NotifyOn: []string{"started", "finished"}},
+	}
+	called := 0
+	_, err := notify.AroundRun(context.Background(), n, notify.RunMeta{RunID: "skip"}, func(context.Context) (cleanup.RunResult, error) {
+		return cleanup.RunResult{}, nil
+	}, func(notify.EventKind, error) {
+		called++
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if called != 0 {
+		t.Fatalf("skipped notify must not callback, called=%d", called)
 	}
 }
 
