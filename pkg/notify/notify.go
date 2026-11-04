@@ -19,6 +19,20 @@ const (
 	KindFailed   EventKind = "failed"
 )
 
+// ObjectSummary is a chat-safe identity + planner reason for one delete target.
+// Reason is copied from the planner/audit (e.g. instance_root); notify does not invent policy semantics.
+type ObjectSummary struct {
+	APIVersion string
+	Kind       string
+	Namespace  string
+	Name       string
+	Reason     string
+}
+
+// MaxObjectsInEvent caps Objects on Event before sink formatting.
+// Teams Adaptive Cards have a ~28 KiB payload limit; 15 rows leave room for facts + errors.
+const MaxObjectsInEvent = 15
+
 // Event is the shared chat payload (sink formatters map from this struct).
 type Event struct {
 	Kind       EventKind
@@ -35,8 +49,12 @@ type Event struct {
 	ErrorCount int
 	Errors     []string // truncated snippets; never include secrets or object YAML
 	Blocked    int
-	LogURL     string // optional; filled by sink from its logURLTemplate when empty upstream
-	Err        error  // hard RunOnce failure (KindFailed)
+	// Objects are deleted (live finished) or would-be-deleted (dry-run / failed planned).
+	// Capped at MaxObjectsInEvent; ObjectsTotal is the pre-cap count.
+	Objects      []ObjectSummary
+	ObjectsTotal int
+	LogURL       string // optional; filled by sink from its logURLTemplate when empty upstream
+	Err          error  // hard RunOnce failure (KindFailed)
 }
 
 // Notifier delivers one Event to a chat sink.
@@ -91,6 +109,40 @@ func TruncateErrors(errs []string, max, maxRunes int) []string {
 		out = append(out, TruncateRunes(e, maxRunes))
 	}
 	return out
+}
+
+// TruncateObjects keeps at most max object summaries (identity fields unchanged).
+func TruncateObjects(objs []ObjectSummary, max int) []ObjectSummary {
+	if max <= 0 || len(objs) == 0 {
+		return nil
+	}
+	if len(objs) > max {
+		objs = objs[:max]
+	}
+	out := make([]ObjectSummary, len(objs))
+	copy(out, objs)
+	return out
+}
+
+// FormatObjectLine renders Kind namespace/name — reason for chat cards.
+func FormatObjectLine(o ObjectSummary) string {
+	id := strings.TrimSpace(o.Kind)
+	if id == "" {
+		id = "Object"
+	}
+	name := strings.TrimSpace(o.Name)
+	if name == "" {
+		name = "—"
+	}
+	if ns := strings.TrimSpace(o.Namespace); ns != "" {
+		id = id + " " + ns + "/" + name
+	} else {
+		id = id + " " + name
+	}
+	if reason := strings.TrimSpace(o.Reason); reason != "" {
+		return id + " — " + TruncateRunes(reason, 120)
+	}
+	return id
 }
 
 // TruncateRunes shortens s to at most max runes.

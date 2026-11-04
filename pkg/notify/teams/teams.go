@@ -159,6 +159,7 @@ func BuildPayload(ev notify.Event) ([]byte, error) {
 			"facts": facts,
 		},
 	}
+	body = append(body, objectListBlocks(ev)...)
 	if summary := subtleSummary(ev); summary != "" {
 		body = append(body, map[string]any{
 			"type":     "TextBlock",
@@ -261,6 +262,62 @@ func subtleSummary(ev notify.Event) string {
 		return notify.TruncateRunes(strings.Join(ev.Errors, "; "), 500)
 	}
 	return ""
+}
+
+// objectListBlocks adds Kind ns/name — reason rows for finished/failed cards.
+// Started stays lean (no list). Cap matches notify.MaxObjectsInEvent; overflow
+// is summarised as "… and N more" (full detail via Open logs / audit JSON).
+func objectListBlocks(ev notify.Event) []any {
+	if ev.Kind == notify.KindStarted || len(ev.Objects) == 0 {
+		return nil
+	}
+	heading := objectsHeading(ev)
+	blocks := []any{
+		map[string]any{
+			"type":    "TextBlock",
+			"text":    heading,
+			"weight":  "Bolder",
+			"wrap":    true,
+			"spacing": "Medium",
+		},
+	}
+	for _, o := range ev.Objects {
+		blocks = append(blocks, map[string]any{
+			"type":    "TextBlock",
+			"text":    notify.FormatObjectLine(o),
+			"wrap":    true,
+			"spacing": "None",
+		})
+	}
+	total := ev.ObjectsTotal
+	if total <= 0 {
+		total = len(ev.Objects)
+	}
+	if omitted := total - len(ev.Objects); omitted > 0 {
+		more := fmt.Sprintf("… and %d more", omitted)
+		if ev.LogURL != "" {
+			more += " (see Open logs)"
+		}
+		blocks = append(blocks, map[string]any{
+			"type":     "TextBlock",
+			"text":     more,
+			"wrap":     true,
+			"isSubtle": true,
+			"spacing":  "Small",
+		})
+	}
+	return blocks
+}
+
+func objectsHeading(ev notify.Event) string {
+	switch {
+	case ev.Kind == notify.KindFailed:
+		return "Planned / attempted"
+	case ev.DryRun:
+		return "Would delete"
+	default:
+		return "Deleted"
+	}
 }
 
 func emptyDash(s string) string {
