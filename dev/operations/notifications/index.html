@@ -1083,6 +1083,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#teams-card-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teams card content
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#failure-isolation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1196,6 +1207,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#teams-card-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teams card content
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#failure-isolation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1276,6 +1298,42 @@
 </tr>
 </tbody>
 </table>
+<h2 id="teams-card-content">Teams card content<a class="headerlink" href="#teams-card-content" title="Permanent link">&para;</a></h2>
+<p>Finished and dry-run finished cards keep the FactSet counts and add an object list:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Heading</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Finished (live)</td>
+<td>Deleted</td>
+<td>Successfully deleted objects + planner reason</td>
+</tr>
+<tr>
+<td>Finished (dry-run)</td>
+<td>Would delete</td>
+<td>Planned delete steps + planner reason</td>
+</tr>
+<tr>
+<td>Failed</td>
+<td>Planned / attempted</td>
+<td>Plan steps (or audit delete lines) + reason when available</td>
+</tr>
+<tr>
+<td>Started</td>
+<td>—</td>
+<td>Lean card; no object list</td>
+</tr>
+</tbody>
+</table>
+<p>Each row is <code>Kind namespace/name — reason</code> (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit (for example <code>instance_root</code>); the notify layer does not invent eligibility policy.</p>
+<p><strong>Truncation:</strong> at most <strong>15</strong> objects are included on the Event / card (<code>notify.MaxObjectsInEvent</code>) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends <code>… and N more (see Open logs)</code>. Full per-object detail remains on stdout audit JSON.</p>
+<p>Slack sinks share the same <code>Event.Objects</code> fields when implemented; MVP Slack remains unimplemented and counts-oriented.</p>
 <h2 id="failure-isolation">Failure isolation<a class="headerlink" href="#failure-isolation" title="Permanent link">&para;</a></h2>
 <p>Notify failures are logged and ignored for exit codes. Missing webhook config is a noop. Partial multi-sink failure does not fail cleanup. Audit JSON remains authoritative for what was deleted.</p>
 <p>Sequence diagram: <a href="../../architecture/sequence/">Teams sequence</a>.</p>
