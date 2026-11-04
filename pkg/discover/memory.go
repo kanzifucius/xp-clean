@@ -47,6 +47,7 @@ func (m *MemoryBackend) Get(_ context.Context, ref trace.ObjectRef) (*unstructur
 // DiscoverRoots returns pre-seeded roots (optionally filtered).
 func (m *MemoryBackend) DiscoverRoots(_ context.Context, sel match.Selectors, ttl match.TTLConfig, now time.Time) ([]RootCandidate, error) {
 	if m.Roots != nil {
+		xrKinds := xrKindsFromMemory(m.Roots, m.Objects)
 		out := make([]RootCandidate, 0, len(m.Roots))
 		for _, r := range m.Roots {
 			c, err := EvaluateXR(r.XR, r.XRD, sel, ttl, now)
@@ -57,10 +58,39 @@ func (m *MemoryBackend) DiscoverRoots(_ context.Context, sel match.Selectors, tt
 				out = append(out, c)
 			}
 		}
-		return HighestParents(out), nil
+		return HighestParents(out, xrKinds), nil
 	}
 	return nil, nil
 }
+
+// xrKindsFromMemory derives XR GroupKinds from seeded Roots' XRD/XR GVKs and
+// from Objects that look like XR instances (spec.crossplane.compositionRef).
+func xrKindsFromMemory(roots []RootCandidate, objects map[string]*unstructured.Unstructured) map[schema.GroupKind]struct{} {
+	kinds := make(map[schema.GroupKind]struct{})
+	add := func(gvk schema.GroupVersionKind) {
+		if gvk.Empty() {
+			return
+		}
+		kinds[schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}] = struct{}{}
+	}
+	for _, r := range roots {
+		add(r.XRD.XRGVK)
+		if r.XR != nil {
+			add(r.XR.GroupVersionKind())
+		}
+	}
+	for _, u := range objects {
+		if u == nil {
+			continue
+		}
+		if _, found, _ := unstructured.NestedMap(u.Object, "spec", "crossplane", "compositionRef"); !found {
+			continue
+		}
+		add(u.GroupVersionKind())
+	}
+	return kinds
+}
+
 
 // BuildTrace walks resourceRefs using the in-memory object map.
 func (m *MemoryBackend) BuildTrace(ctx context.Context, root *unstructured.Unstructured) (trace.Trace, error) {

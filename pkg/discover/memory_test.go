@@ -8,6 +8,7 @@ import (
 	"github.com/kanzifucius/xp-clean/pkg/discover"
 	"github.com/kanzifucius/xp-clean/pkg/match"
 	"github.com/kanzifucius/xp-clean/pkg/trace"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestMemoryBackendSeedGetDelete(t *testing.T) {
@@ -55,6 +56,52 @@ func TestMemoryBackendDiscoverRootsFilters(t *testing.T) {
 	}
 	if len(roots) != 1 || roots[0].XR.GetName() != "ok" {
 		t.Fatalf("want only ok root, got %#v", roots)
+	}
+}
+
+func TestMemoryBackendDiscoverRootsExcludesChildWhenParentFiltered(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	tenantXRD := sampleXRDCustom("datalabtenants.datalab.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"datalab.dev.example.org", "DataLabTenant", "datalabtenants", "v1alpha1")
+	wsXRD := sampleXRDCustom("dbxworkspaces.dbx.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"dbx.dev.example.org", "DBXWorkspace", "dbxworkspaces", "v1alpha1")
+	tenantInfo, err := discover.InspectXRD(tenantXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	wsInfo, err := discover.InspectXRD(wsXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tenant := sampleXRCustom("datalab.dev.example.org/v1alpha1", "DataLabTenant", "xp-test-1", "thomas",
+		map[string]string{"team": "other"}, nil, now.Add(-72*time.Hour))
+	ws := sampleXRCustom("dbx.dev.example.org/v1alpha1", "DBXWorkspace", "xp-test-1", "thomas-workspace",
+		map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
+	ctrl := true
+	ws.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "datalab.dev.example.org/v1alpha1",
+		Kind:       "DataLabTenant",
+		Name:       tenant.GetName(),
+		UID:        tenant.GetUID(),
+		Controller: &ctrl,
+	}})
+
+	mem := &discover.MemoryBackend{
+		Roots: []discover.RootCandidate{
+			{XR: tenant, XRD: tenantInfo},
+			{XR: ws, XRD: wsInfo},
+		},
+	}
+	roots, err := mem.DiscoverRoots(context.Background(), eligibleSelectors(), match.TTLConfig{RespectResourceTTL: false}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(roots) != 0 {
+		t.Fatalf("parent filtered by labels; child must not become a root; got %#v", roots)
 	}
 }
 
