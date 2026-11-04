@@ -145,7 +145,7 @@ observability:
     # … see Operations → Notifications
 ```
 
-Audit events go to **stdout** JSON only for now — no audit ConfigMap or object-storage retention sink.
+Audit events are JSON lines on **stdout** when `run` is verbose (`-v` / `--log-level`) or under `manager`; quiet `run` prints a human summary only. No audit ConfigMap or object-storage retention sink for now.
 
 ## RBAC note
 

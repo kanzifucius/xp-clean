@@ -1,6 +1,6 @@
 # Notifications
 
-Chat summaries sit **beside** stdout audit JSON and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
+Chat summaries sit **beside** the CLI summary / audit JSON (when enabled) and metrics. They wrap each `RunOnce` (started / finished / failed), use a short HTTP deadline, and **never** change cleanup results or exit codes.
 
 MVP sink: **Microsoft Teams Workflows**. Slack shares the multi-sink schema but is not implemented yet.
 
@@ -55,7 +55,7 @@ Finished and dry-run finished cards keep the FactSet counts and add an object li
 
 Each row is `Kind namespace/name — reason` (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit (for example `instance_root`); the notify layer does not invent eligibility policy.
 
-**Truncation:** at most **15** objects are included on the Event / card (`notify.MaxObjectsInEvent`) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends `… and N more (see Open logs)`. Full per-object detail remains on stdout audit JSON.
+**Truncation:** at most **15** objects are included on the Event / card (`notify.MaxObjectsInEvent`) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends `… and N more (see Open logs)`. Full per-object detail remains in the `run` summary or stdout audit JSON (`-v` / `manager`).
 
 Slack sinks share the same `Event.Objects` fields when implemented; MVP Slack remains unimplemented and counts-oriented.
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -29,7 +30,9 @@ func newRunCommand(g *options.Global) *cobra.Command {
 		Short: "Day-to-day cleanup: dry-run plan by default; live deletes with --apply",
 		Long: `Run is the primary day-to-day command. It discovers eligible stacks
 (highest-parent roots by default) and prints a dry-run plan of what would be
-deleted. Use --mode=trace for full parent→child composition trees.
+deleted. Default output is a compact human summary (policy line + would-delete
+list). Use -v / --log-level=info for audit JSON and full stack/trace detail.
+Use --mode=trace for full parent→child composition trees.
 
 Live deletes require both --apply (or compatibility --dry-run=false) and
 policy dryRun: false. Without --apply, run always plans only — even when the
@@ -62,9 +65,15 @@ change cleanup exit codes. Use manager for scheduled loops.`,
 			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
+			// Quiet by default: human summary only. Audit JSON returns with -v /
+			// --log-level=info|debug|warn (same gate as interactive log noise).
+			auditOut := io.Writer(io.Discard)
+			if g.Verbose() {
+				auditOut = os.Stdout
+			}
 			runner := &cleanup.Runner{
 				Backend: backend,
-				Audit:   audit.NewLogger(os.Stdout),
+				Audit:   audit.NewLogger(auditOut),
 				Out:     os.Stdout,
 			}
 
@@ -88,7 +97,7 @@ change cleanup exit codes. Use manager for scheduled loops.`,
 				if err != nil {
 					return exit.RuntimeErr(fmt.Errorf("run failed (%s): %w", policy.Name, err))
 				}
-				options.PrintSummary(cmd.ErrOrStderr(), result, policy)
+				options.PrintSummary(cmd.OutOrStdout(), result, policy, options.SummaryOptions{Verbose: g.Verbose()})
 				merged = cleanup.MergeRunResults(merged, result)
 			}
 

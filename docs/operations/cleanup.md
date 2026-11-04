@@ -24,7 +24,7 @@ discover XRDs / XRs
   → plan deletions (scope + gates)
   → execute only with --apply and policy dryRun: false
        (foreground Delete; optional --wait poll)
-  → audit JSON on stdout (+ optional Teams notify)
+  → compact human summary on stdout; audit JSON with `-v` / manager (+ optional Teams notify)
 ```
 
 Visual walkthrough: [Cleanup workflow](../architecture/workflow.md).

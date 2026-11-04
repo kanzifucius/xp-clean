@@ -109,36 +109,103 @@ func LiveBackend(cfg *rest.Config) (*discover.LiveBackend, error) {
 	return discover.NewLiveBackend(cfg)
 }
 
-// PrintSummary writes a human summary of a run to stderr.
-func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved) {
+// SummaryOptions controls how PrintSummary renders run results.
+type SummaryOptions struct {
+	// Verbose restores full trace dumps and per-stack step listings.
+	Verbose bool
+}
+
+// PrintSummary writes a human summary of a run.
+//
+// Quiet default (roots + instances-only, no -v): one policy line, a would-delete
+// count, and a flat Kind namespace/name list. Trace trees and "stack … steps=N"
+// blocks are omitted when every plan is a single root XR delete.
+//
+// Richer output returns for mode=trace, scope=all, multi-step plans, or Verbose.
+func PrintSummary(w io.Writer, result cleanup.RunResult, pol conf.Resolved, opts SummaryOptions) {
 	if w == nil {
 		w = os.Stderr
 	}
-	wouldDelete := 0
-	for _, p := range result.Plans {
-		if len(p.BlockedBy) == 0 {
-			wouldDelete++
+	mode := pol.Deletion.Mode
+	if mode == "" {
+		mode = cleanup.ModeRoots
+	}
+	scope := pol.Deletion.Scope
+	if scope == "" {
+		scope = cleanup.ScopeInstancesOnly
+	}
+
+	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v mode=%s scope=%s\n",
+		pol.Name, pol.DryRun, mode, scope)
+
+	showTraces := opts.Verbose || mode == cleanup.ModeTrace
+	detailStacks := opts.Verbose || mode == cleanup.ModeTrace || scope == cleanup.ScopeAll
+
+	if showTraces {
+		for _, tr := range result.Traces {
+			_, _ = fmt.Fprint(w, trace.RenderText(tr))
 		}
 	}
-	_, _ = fmt.Fprintf(w, "policy=%s dryRun=%v mode=%s scope=%s stacksMatched=%d wouldDelete=%d\n",
-		pol.Name, pol.DryRun, pol.Deletion.Mode, pol.Deletion.Scope, len(result.Traces), wouldDelete)
-	for _, tr := range result.Traces {
-		_, _ = fmt.Fprint(w, trace.RenderText(tr))
-	}
+
+	var (
+		compactSteps []cleanup.DeleteStep
+		compactDry   = true
+		sawCompact   bool
+		detailed     []cleanup.DeletePlan
+		blocked      []cleanup.DeletePlan
+	)
 	for _, p := range result.Plans {
 		if len(p.BlockedBy) > 0 {
-			_, _ = fmt.Fprintf(w, "stack %s blocked: %v\n", p.TraceID, p.BlockedBy)
+			blocked = append(blocked, p)
 			continue
 		}
+		if detailStacks || len(p.Steps) != 1 {
+			detailed = append(detailed, p)
+			continue
+		}
+		if !sawCompact {
+			compactDry = p.DryRun
+			sawCompact = true
+		}
+		compactSteps = append(compactSteps, p.Steps...)
+	}
+
+	if sawCompact || (!detailStacks && len(detailed) == 0 && len(blocked) == 0) {
+		verb := "would delete"
+		if sawCompact && !compactDry {
+			verb = "deleting"
+		}
+		_, _ = fmt.Fprintf(w, "%s %d\n", verb, len(compactSteps))
+		for _, s := range compactSteps {
+			_, _ = fmt.Fprintf(w, "  %s\n", formatStepObject(s))
+		}
+	}
+
+	for _, p := range blocked {
+		_, _ = fmt.Fprintf(w, "stack %s blocked: %v\n", p.TraceID, p.BlockedBy)
+	}
+	for _, p := range detailed {
 		verb := "would delete"
 		if !p.DryRun {
 			verb = "deleting"
 		}
 		_, _ = fmt.Fprintf(w, "stack %s %s steps=%d dryRun=%v\n", p.TraceID, verb, len(p.Steps), p.DryRun)
 		for i, s := range p.Steps {
-			_, _ = fmt.Fprintf(w, "  %d. %s %s/%s\n", i+1, s.Action, s.Kind, s.Ref.Key())
+			_, _ = fmt.Fprintf(w, "  %d. %s %s\n", i+1, s.Action, formatStepObject(s))
 		}
 	}
+}
+
+func formatStepObject(s cleanup.DeleteStep) string {
+	kind := s.Ref.Kind
+	if kind == "" {
+		kind = string(s.Kind)
+	}
+	name := s.Ref.Name
+	if s.Ref.Namespace != "" {
+		name = s.Ref.Namespace + "/" + s.Ref.Name
+	}
+	return kind + " " + name
 }
 
 // RejectNamespaceOnRunPlan enforces the locked rule that -n / --namespace is
