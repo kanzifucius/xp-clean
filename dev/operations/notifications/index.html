@@ -1331,7 +1331,8 @@
 </tr>
 </tbody>
 </table>
-<p>Each row is <code>Kind namespace/name — reason</code> (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit (for example <code>instance_root</code>); the notify layer does not invent eligibility policy.</p>
+<p>Each row is <code>Kind namespace/name — reason</code> (cluster-scoped objects omit the namespace). Reasons are copied from the planner / audit and answer <em>why</em> the object was eligible — for example <code>instance_root; label:xp-clean.io/eligible=true+ttl_elapsed</code>, <code>instance_root; globs+expires-at</code>, or <code>instance_root; label:…+default_ttl</code>. The notify layer does not invent eligibility policy.</p>
+<p>Teams finished/failed cards use a full-bleed coloured banner header (<code>good</code> / <code>attention</code> / <code>warning</code> / <code>accent</code> / <code>emphasis</code>) so the status pops in the channel feed, with object lines in a nested emphasis block.</p>
 <p><strong>Truncation:</strong> at most <strong>15</strong> objects are included on the Event / card (<code>notify.MaxObjectsInEvent</code>) to stay under Teams Adaptive Card payload limits. When more targets exist, the card appends <code>… and N more (see Open logs)</code>. Full per-object detail remains in the <code>run</code> summary or stdout audit JSON (<code>-v</code> / <code>manager</code>).</p>
 <p>Slack sinks share the same <code>Event.Objects</code> fields when implemented; MVP Slack remains unimplemented and counts-oriented.</p>
 <h2 id="failure-isolation">Failure isolation<a class="headerlink" href="#failure-isolation" title="Permanent link">&para;</a></h2>

@@ -1398,8 +1398,8 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  &lt;Kind&gt; &lt;namespace&gt;/&lt;name&gt; — &lt;reason&gt;
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  …
 </code></pre></div>
-<p>Each object line includes the planner reason (for example <code>instance_root</code>). The same <code>Kind namespace/name — reason</code> shape is used on Teams Adaptive Cards.</p>
-<p>No per-object audit JSON, no <code>trace …</code> dumps, and no <code>stack … steps=1</code> / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with <code>-v=1</code> (or <code>--log-level=info</code>). <code>mode=trace</code>, <code>scope=all</code>, and multi-step plans keep detailed stack listings without requiring <code>-v</code>. Machine-readable DeletePlans remain on <code>plan -o json|yaml</code>. Scheduled <code>manager</code> runs still emit audit JSON on stdout.</p>
+<p>Each object line includes the planner delete reason: mode tag plus eligibility cause (for example <code>instance_root; label:xp-clean.io/eligible=true+ttl_elapsed</code>). The same <code>Kind namespace/name — reason</code> shape is used on Teams Adaptive Cards and in audit JSON <code>reason</code> fields.</p>
+<p>No per-object audit JSON, no <code>trace …</code> dumps, and no <code>stack … steps=1</code> / numbered delete lines for single-step root plans. Restore richer plan detail and stdout audit JSON with <code>-v=1</code> (or <code>--log-level=info</code>). Quiet summary (eligibility reasons included) is the default without <code>-v</code>. <code>mode=trace</code>, <code>scope=all</code>, and multi-step plans keep detailed stack listings without requiring <code>-v</code>. Machine-readable DeletePlans remain on <code>plan -o json|yaml</code>. Scheduled <code>manager</code> runs still emit audit JSON on stdout.</p>
 <h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
