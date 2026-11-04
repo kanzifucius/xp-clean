@@ -5,10 +5,10 @@ Standalone Cobra binary `xp-clean`. kubectl plugin documentation is deferred —
 ## Commands
 
 ```text
-xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
-xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--fail-on-blocked] [-o json|yaml]
+xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--dry-run=true|false] [--scope instances-only|all] [--gvk-glob G/V]… [--fail-on-blocked] [--notify] [--notify-on-dry-run] [--kubeconfig PATH] [--context NAME]
+xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--gvk-glob G/V]… [--fail-on-blocked] [-o json|yaml]
 xp-clean debug trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
-xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait]
+xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--gvk-glob G/V]…
 xp-clean version [-o short|json|yaml]
 xp-clean completion bash|zsh|fish|powershell
 ```
@@ -34,6 +34,7 @@ Root `xp-clean trace` remains as a **hidden** compatibility alias of `debug trac
 | `--wait` / `XP_CLEAN_WAIT` | Opt-in: poll until each delete is gone (honours `deletion.waitTimeout`). **Default is no wait** |
 | `--dry-run` / `XP_CLEAN_DRY_RUN` | Compatibility boolean planner dry-run (not kubectl API-server dry-run). `--dry-run=true` forces a plan; `--dry-run=false` allows live only when policy `dryRun` is false (prefer `--apply`) |
 | `--scope` / `XP_CLEAN_SCOPE` | `instances-only` (default) or `all` |
+| `--gvk-glob` | Repeatable `group/version` glob (same dialect as `selectors.globs.gvks`). When set, **replaces** policy GVK globs entirely (no merge). When omitted, policy globs (including none) are unchanged. Labels / TTL / other globs stay from policy |
 | `--fail-on-blocked` | Exit **3** when the run completed with blocked plans |
 | `--notify` / `XP_CLEAN_NOTIFY` | Override `notifications.enabled` |
 | `--notify-on-dry-run` / `XP_CLEAN_NOTIFY_ON_DRY_RUN` | Override `notifications.onDryRun` |

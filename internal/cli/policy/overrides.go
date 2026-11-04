@@ -58,6 +58,10 @@ type FlagOverrides struct {
 	// NotifyOnDryRunSet is true when --notify-on-dry-run was explicitly passed.
 	NotifyOnDryRunSet bool
 	NotifyOnDryRun    bool
+
+	// GVKGlobs, when non-empty, replaces selectors.globs.gvks entirely
+	// (no merge with the policy document). When empty/omitted, policy globs stay.
+	GVKGlobs []string
 }
 
 // ResolveConfigPath picks --config, then XP_CLEAN_CONFIG. Empty means no file
@@ -235,6 +239,10 @@ func applyFlagOverrides(policy *conf.Resolved, o FlagOverrides) error {
 	}
 	if o.NotifyOnDryRunSet {
 		policy.Notifications.OnDryRun = o.NotifyOnDryRun
+	}
+	if len(o.GVKGlobs) > 0 {
+		// Replace, do not merge — CLI values become the sole GVK glob list.
+		policy.Selectors.Globs.GVKs = append([]string(nil), o.GVKGlobs...)
 	}
 	return nil
 }

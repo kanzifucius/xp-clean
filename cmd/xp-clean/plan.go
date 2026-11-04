@@ -30,7 +30,8 @@ interactive dry-run plans; this subcommand remains for scripts that need
 
 Loads labelled ConfigMaps from --policy-namespace unless --config is set.
 --scope selects deletion.scope for the plan contents; it does not mean
-"plan only definitions". --fail-on-blocked exits 3 when any plan is blocked.`,
+"plan only definitions". --gvk-glob (repeatable) replaces selectors.globs.gvks
+when set. --fail-on-blocked exits 3 when any plan is blocked.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := options.RejectNamespaceOnRunPlan(g.Kube.Namespace); err != nil {
 				return exit.UsageErr(err)

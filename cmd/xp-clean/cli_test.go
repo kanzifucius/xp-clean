@@ -7,8 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kanzifucius/xp-clean/cmd/xp-clean/options"
 	"github.com/kanzifucius/xp-clean/internal/cli/exit"
+	clipolicy "github.com/kanzifucius/xp-clean/internal/cli/policy"
 	"github.com/kanzifucius/xp-clean/pkg/cleanup"
+	"github.com/spf13/pflag"
 )
 
 func writePolicy(t *testing.T) string {
@@ -81,10 +84,84 @@ func TestRunHelpMentionsApply(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := out.String()
-	for _, want := range []string{"--apply", "--mode", "--wait", "fail-on-blocked", "ConfigMap", "dry-run"} {
+	for _, want := range []string{"--apply", "--mode", "--wait", "fail-on-blocked", "ConfigMap", "dry-run", "--gvk-glob"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("run help missing %q:\n%s", want, s)
 		}
+	}
+}
+
+func TestPlanHelpMentionsGVKGlob(t *testing.T) {
+	cmd := newRootCommand()
+	cmd.SetArgs([]string{"plan", "--help"})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "--gvk-glob") {
+		t.Fatalf("plan help missing --gvk-glob:\n%s", out.String())
+	}
+}
+
+func TestGVKGlobFlagReplacesPolicyViaLoad(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: test
+dryRun: true
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+  globs:
+    gvks: ["from-policy.example.org/v1"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var pf options.PolicyFlags
+	fs := pflag.NewFlagSet("test-gvk", pflag.ContinueOnError)
+	pf.Bind(fs, true)
+	if err := fs.Parse([]string{
+		"--config", path,
+		"--gvk-glob", "*.dev.example.org/*",
+		"--gvk-glob", "example.org/v1alpha1",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	r, err := clipolicy.LoadAndMerge(pf.Overrides(fs, false))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"*.dev.example.org/*", "example.org/v1alpha1"}
+	if len(r.Selectors.Globs.GVKs) != len(want) {
+		t.Fatalf("got %v want %v", r.Selectors.Globs.GVKs, want)
+	}
+	for i := range want {
+		if r.Selectors.Globs.GVKs[i] != want[i] {
+			t.Fatalf("got %v want %v", r.Selectors.Globs.GVKs, want)
+		}
+	}
+	for _, g := range r.Selectors.Globs.GVKs {
+		if g == "from-policy.example.org/v1" {
+			t.Fatal("policy GVK must be replaced, not merged")
+		}
+	}
+
+	// Omitted flag keeps policy globs.
+	fs2 := pflag.NewFlagSet("test-gvk-omit", pflag.ContinueOnError)
+	var pf2 options.PolicyFlags
+	pf2.Bind(fs2, true)
+	if err := fs2.Parse([]string{"--config", path}); err != nil {
+		t.Fatal(err)
+	}
+	r2, err := clipolicy.LoadAndMerge(pf2.Overrides(fs2, false))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r2.Selectors.Globs.GVKs) != 1 || r2.Selectors.Globs.GVKs[0] != "from-policy.example.org/v1" {
+		t.Fatalf("omitted flag should keep policy globs, got %v", r2.Selectors.Globs.GVKs)
 	}
 }
 

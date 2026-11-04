@@ -191,6 +191,89 @@ func TestResolvePolicyNamespace(t *testing.T) {
 	}
 }
 
+func TestGVKGlobOverrideReplace(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: t
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+  globs:
+    gvks: ["apps.example.org/v1", "legacy.example.org/v1beta1"]
+    xrNames: ["test-*"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// No flag → policy GVK globs unchanged; other globs stay.
+	base, err := policy.LoadAndMerge(policy.FlagOverrides{ConfigPath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(base.Selectors.Globs.GVKs), 2; got != want {
+		t.Fatalf("no-flag GVK count=%d want %d (%v)", got, want, base.Selectors.Globs.GVKs)
+	}
+	if got := base.Selectors.Globs.XRNames; len(got) != 1 || got[0] != "test-*" {
+		t.Fatalf("xrNames should stay from policy: %v", got)
+	}
+
+	// Flag set → replace GVK globs entirely; labels / other globs untouched.
+	over, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath: path,
+		GVKGlobs:   []string{"*.dev.example.org/*", "team-b.example.org/v1*"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantGVKs := []string{"*.dev.example.org/*", "team-b.example.org/v1*"}
+	if len(over.Selectors.Globs.GVKs) != len(wantGVKs) {
+		t.Fatalf("GVK globs=%v want %v", over.Selectors.Globs.GVKs, wantGVKs)
+	}
+	for i, w := range wantGVKs {
+		if over.Selectors.Globs.GVKs[i] != w {
+			t.Fatalf("GVK[%d]=%q want %q", i, over.Selectors.Globs.GVKs[i], w)
+		}
+	}
+	// Confirm no merge with policy values.
+	for _, leftover := range []string{"apps.example.org/v1", "legacy.example.org/v1beta1"} {
+		for _, g := range over.Selectors.Globs.GVKs {
+			if g == leftover {
+				t.Fatalf("policy GVK %q must not remain after flag replace", leftover)
+			}
+		}
+	}
+	if over.Selectors.RequireLabels["xp-clean.io/eligible"] != "true" {
+		t.Fatal("requireLabels must stay from policy")
+	}
+	if got := over.Selectors.Globs.XRNames; len(got) != 1 || got[0] != "test-*" {
+		t.Fatalf("non-GVK globs must stay from policy: %v", got)
+	}
+}
+
+func TestGVKGlobOverrideOnLabelOnlyPolicy(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "policy.yaml")
+	if err := os.WriteFile(path, []byte(`
+name: skinny
+selectors:
+  requireLabels:
+    xp-clean.io/eligible: "true"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r, err := policy.LoadAndMerge(policy.FlagOverrides{
+		ConfigPath: path,
+		GVKGlobs:   []string{"example.org/v1alpha1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r.Selectors.Globs.GVKs) != 1 || r.Selectors.Globs.GVKs[0] != "example.org/v1alpha1" {
+		t.Fatalf("got %v", r.Selectors.Globs.GVKs)
+	}
+}
+
 func TestLoadPoliciesFromFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "policy.yaml")

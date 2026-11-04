@@ -38,7 +38,8 @@ propagation; --wait opts into poll-until-gone (default is no wait).
 
 Policies load from labelled ConfigMaps in --policy-namespace (default xp-clean)
 unless --config points at an explicit file override. --scope overrides
-deletion.scope (instances-only|all). --fail-on-blocked exits 3 when any plan
+deletion.scope (instances-only|all). --gvk-glob (repeatable) replaces
+selectors.globs.gvks when set. --fail-on-blocked exits 3 when any plan
 is blocked. Optional Teams/Slack notifications wrap each RunOnce and never
 change cleanup exit codes. Use manager for scheduled loops.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
