@@ -87,17 +87,26 @@ func EvaluateXR(xr *unstructured.Unstructured, info XRDInfo, sel match.Selectors
 	return c, nil
 }
 
-// HighestParents filters candidates that are not themselves composed children
-// of another XR in the candidate set (controller ownerReference to another XR).
-func HighestParents(candidates []RootCandidate) []RootCandidate {
-	byUID := map[string]*unstructured.Unstructured{}
-	for _, c := range candidates {
-		byUID[string(c.XR.GetUID())] = c.XR
+// XRKindsFromXRDInfos builds the set of XR GroupKinds (version ignored) from
+// inspected XRDs. Empty XRGVKs are skipped.
+func XRKindsFromXRDInfos(infos []XRDInfo) map[schema.GroupKind]struct{} {
+	out := make(map[schema.GroupKind]struct{}, len(infos))
+	for _, info := range infos {
+		if info.XRGVK.Empty() {
+			continue
+		}
+		out[schema.GroupKind{Group: info.XRGVK.Group, Kind: info.XRGVK.Kind}] = struct{}{}
 	}
+	return out
+}
 
+// HighestParents filters candidates that are composed children of another XR
+// kind (controller ownerReference whose GroupKind is in xrKinds). Parent XRs
+// need not be in the candidate set — only the cluster XRD-derived kind set.
+func HighestParents(candidates []RootCandidate, xrKinds map[schema.GroupKind]struct{}) []RootCandidate {
 	out := make([]RootCandidate, 0, len(candidates))
 	for _, c := range candidates {
-		if isOwnedByOtherXR(c.XR, byUID) {
+		if isComposedChildOfXR(c.XR, xrKinds) {
 			continue
 		}
 		out = append(out, c)
@@ -105,18 +114,22 @@ func HighestParents(candidates []RootCandidate) []RootCandidate {
 	return out
 }
 
-func isOwnedByOtherXR(xr *unstructured.Unstructured, byUID map[string]*unstructured.Unstructured) bool {
+// isComposedChildOfXR reports whether xr has a controller ownerReference whose
+// GroupKind is an XR kind. Non-controller owners and non-XR owners do not count.
+func isComposedChildOfXR(xr *unstructured.Unstructured, xrKinds map[schema.GroupKind]struct{}) bool {
+	if len(xrKinds) == 0 {
+		return false
+	}
 	for _, or := range xr.GetOwnerReferences() {
 		if or.Controller == nil || !*or.Controller {
 			continue
 		}
-		if _, ok := byUID[string(or.UID)]; ok {
-			return true
+		gv, err := schema.ParseGroupVersion(or.APIVersion)
+		if err != nil {
+			continue
 		}
-		// Also treat owner kind matching common XR patterns via API version group.
-		if or.UID != "" {
-			// If owner is in our XR map by name+kind heuristic when UID missing from set.
-			_ = or
+		if _, ok := xrKinds[schema.GroupKind{Group: gv.Group, Kind: or.Kind}]; ok {
+			return true
 		}
 	}
 	return false
@@ -136,6 +149,9 @@ func DiscoverRoots(ctx context.Context, dyn *DynamicClient, sel match.Selectors,
 		}
 		infos = append(infos, info)
 	}
+	// Kind set from ALL XRDs (before selector filter) so a composed child is
+	// never treated as a root when its parent XR kind was filtered out.
+	xrKinds := XRKindsFromXRDInfos(infos)
 	eligible := FilterEligibleXRDs(infos)
 
 	var all []RootCandidate
@@ -155,7 +171,7 @@ func DiscoverRoots(ctx context.Context, dyn *DynamicClient, sel match.Selectors,
 			}
 		}
 	}
-	return HighestParents(filterEligibleOnly(all)), nil
+	return HighestParents(filterEligibleOnly(all), xrKinds), nil
 }
 
 func filterEligibleOnly(in []RootCandidate) []RootCandidate {

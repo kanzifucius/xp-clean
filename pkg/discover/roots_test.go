@@ -8,6 +8,7 @@ import (
 	"github.com/kanzifucius/xp-clean/pkg/discover"
 	"github.com/kanzifucius/xp-clean/pkg/match"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -108,6 +109,16 @@ func TestEvaluateXRTable(t *testing.T) {
 	}
 }
 
+func xdbXRKinds(t *testing.T) map[schema.GroupKind]struct{} {
+	t.Helper()
+	xrd := sampleXRD("xdbs.db.dev.example.org", map[string]string{match.LabelEligible: "true"}, "Namespaced")
+	info, err := discover.InspectXRD(xrd, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return discover.XRKindsFromXRDInfos([]discover.XRDInfo{info})
+}
+
 func TestHighestParents(t *testing.T) {
 	t.Parallel()
 	now := time.Now().UTC()
@@ -116,6 +127,7 @@ func TestHighestParents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	xrKinds := discover.XRKindsFromXRDInfos([]discover.XRDInfo{info})
 
 	parent := sampleXR("xp-test-1", "parent-xr", map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
 	child := sampleXR("xp-test-1", "child-xr", map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
@@ -134,7 +146,7 @@ func TestHighestParents(t *testing.T) {
 		{XR: child, XRD: info, Eligible: true},
 		{XR: unrelated, XRD: info, Eligible: true},
 	}
-	roots := discover.HighestParents(candidates)
+	roots := discover.HighestParents(candidates, xrKinds)
 	if len(roots) != 2 {
 		t.Fatalf("want 2 highest parents, got %d", len(roots))
 	}
@@ -155,6 +167,7 @@ func TestHighestParentsIgnoresNonControllerOwners(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	xrKinds := discover.XRKindsFromXRDInfos([]discover.XRDInfo{info})
 	a := sampleXR("xp-test-1", "a", map[string]string{match.LabelEligible: "true"}, nil, now)
 	b := sampleXR("xp-test-1", "b", map[string]string{match.LabelEligible: "true"}, nil, now)
 	ctrl := false
@@ -168,9 +181,131 @@ func TestHighestParentsIgnoresNonControllerOwners(t *testing.T) {
 	roots := discover.HighestParents([]discover.RootCandidate{
 		{XR: a, XRD: info, Eligible: true},
 		{XR: b, XRD: info, Eligible: true},
-	})
+	}, xrKinds)
 	if len(roots) != 2 {
 		t.Fatalf("non-controller owner should not demote child; got %d", len(roots))
+	}
+}
+
+func TestHighestParentsExcludesChildWhenParentNotInCandidates(t *testing.T) {
+	t.Parallel()
+	now := time.Now().UTC()
+	tenantXRD := sampleXRDCustom("datalabtenants.datalab.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"datalab.dev.example.org", "DataLabTenant", "datalabtenants", "v1alpha1")
+	wsXRD := sampleXRDCustom("dbxworkspaces.dbx.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"dbx.dev.example.org", "DBXWorkspace", "dbxworkspaces", "v1alpha1")
+	tenantInfo, err := discover.InspectXRD(tenantXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	wsInfo, err := discover.InspectXRD(wsXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Full cluster XRD kind set includes the parent kind even when the parent
+	// XR is filtered out of candidates by selectors.
+	xrKinds := discover.XRKindsFromXRDInfos([]discover.XRDInfo{tenantInfo, wsInfo})
+
+	child := sampleXRCustom("dbx.dev.example.org/v1alpha1", "DBXWorkspace", "xp-test-1", "thomas-workspace",
+		map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
+	ctrl := true
+	child.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "datalab.dev.example.org/v1alpha1",
+		Kind:       "DataLabTenant",
+		Name:       "thomas",
+		UID:        types.UID("uid-thomas"),
+		Controller: &ctrl,
+	}})
+
+	roots := discover.HighestParents([]discover.RootCandidate{
+		{XR: child, XRD: wsInfo, Eligible: true},
+	}, xrKinds)
+	if len(roots) != 0 {
+		t.Fatalf("child owned by filtered-out XR kind must not be a root; got %#v", roots)
+	}
+}
+
+func TestHighestParentsNonXRControllerOwnerStillRoot(t *testing.T) {
+	t.Parallel()
+	now := time.Now().UTC()
+	infoXRD := sampleXRD("xdbs.db.dev.example.org", map[string]string{match.LabelEligible: "true"}, "Namespaced")
+	info, err := discover.InspectXRD(infoXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	xrKinds := xdbXRKinds(t)
+	xr := sampleXR("xp-test-1", "deploy-owned", map[string]string{match.LabelEligible: "true"}, nil, now)
+	ctrl := true
+	xr.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "apps/v1",
+		Kind:       "Deployment",
+		Name:       "some-deploy",
+		UID:        types.UID("uid-deploy"),
+		Controller: &ctrl,
+	}})
+	roots := discover.HighestParents([]discover.RootCandidate{
+		{XR: xr, XRD: info, Eligible: true},
+	}, xrKinds)
+	if len(roots) != 1 {
+		t.Fatalf("non-XR controller owner must not demote XR; got %d", len(roots))
+	}
+}
+
+func TestHighestParentsNilControllerStillRoot(t *testing.T) {
+	t.Parallel()
+	now := time.Now().UTC()
+	infoXRD := sampleXRD("xdbs.db.dev.example.org", map[string]string{match.LabelEligible: "true"}, "Namespaced")
+	info, err := discover.InspectXRD(infoXRD, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	xrKinds := xdbXRKinds(t)
+	xr := sampleXR("xp-test-1", "nil-ctrl", map[string]string{match.LabelEligible: "true"}, nil, now)
+	xr.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "db.dev.example.org/v1alpha1",
+		Kind:       "XDB",
+		Name:       "parent",
+		UID:        types.UID("uid-parent"),
+		Controller: nil,
+	}})
+	roots := discover.HighestParents([]discover.RootCandidate{
+		{XR: xr, XRD: info, Eligible: true},
+	}, xrKinds)
+	if len(roots) != 1 {
+		t.Fatalf("nil Controller must not demote XR; got %d", len(roots))
+	}
+}
+
+func TestHighestParentsOwnerVersionMismatchStillChild(t *testing.T) {
+	t.Parallel()
+	now := time.Now().UTC()
+	// XRD serves v1alpha1; ownerReference uses v1beta1 of the same group/kind.
+	xrd := sampleXRDCustom("dbxworkspaces.dbx.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"dbx.dev.example.org", "DBXWorkspace", "dbxworkspaces", "v1alpha1")
+	info, err := discover.InspectXRD(xrd, eligibleSelectors())
+	if err != nil {
+		t.Fatal(err)
+	}
+	xrKinds := discover.XRKindsFromXRDInfos([]discover.XRDInfo{info})
+
+	child := sampleXRCustom("dbx.dev.example.org/v1alpha1", "DBXWorkspace", "xp-test-1", "ws",
+		map[string]string{match.LabelEligible: "true"}, nil, now)
+	ctrl := true
+	child.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "dbx.dev.example.org/v1beta1",
+		Kind:       "DBXWorkspace",
+		Name:       "parent-ws",
+		UID:        types.UID("uid-parent-ws"),
+		Controller: &ctrl,
+	}})
+	roots := discover.HighestParents([]discover.RootCandidate{
+		{XR: child, XRD: info, Eligible: true},
+	}, xrKinds)
+	if len(roots) != 0 {
+		t.Fatalf("same group/kind different version must still be a composed child; got %#v", roots)
 	}
 }
 
@@ -226,5 +361,46 @@ func TestDiscoverRootsLegacyClusterXRDEligibleButNoClaims(t *testing.T) {
 	}
 	if len(roots) != 0 {
 		t.Fatalf("no XR instances seeded; want 0 roots, got %d", len(roots))
+	}
+}
+
+func TestDiscoverRootsExcludesChildWhenParentXRDFiltered(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	tenantXRD := sampleXRDCustom("datalabtenants.datalab.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"datalab.dev.example.org", "DataLabTenant", "datalabtenants", "v1alpha1")
+	wsXRD := sampleXRDCustom("dbxworkspaces.dbx.dev.example.org",
+		map[string]string{match.LabelEligible: "true"}, "Namespaced",
+		"dbx.dev.example.org", "DBXWorkspace", "dbxworkspaces", "v1alpha1")
+
+	tenant := sampleXRCustom("datalab.dev.example.org/v1alpha1", "DataLabTenant", "xp-test-1", "thomas",
+		map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
+	ws := sampleXRCustom("dbx.dev.example.org/v1alpha1", "DBXWorkspace", "xp-test-1", "thomas-workspace",
+		map[string]string{match.LabelEligible: "true"}, nil, now.Add(-72*time.Hour))
+	ctrl := true
+	ws.SetOwnerReferences([]metav1.OwnerReference{{
+		APIVersion: "datalab.dev.example.org/v1alpha1",
+		Kind:       "DataLabTenant",
+		Name:       tenant.GetName(),
+		UID:        tenant.GetUID(),
+		Controller: &ctrl,
+	}})
+
+	// Policy selects only dbxworkspaces XRDs — parent tenant XRD is filtered out,
+	// so the parent XR is never a candidate; child must still not be a root.
+	sel := match.Selectors{
+		RequireLabels: map[string]string{match.LabelEligible: "true"},
+		Globs: match.GlobPatterns{
+			XRDNames: []string{"dbxworkspaces.*"},
+		},
+	}
+	dyn := discoverClient(tenantXRD, wsXRD, tenant, ws)
+	roots, err := discover.DiscoverRoots(context.Background(), dyn, sel, match.TTLConfig{RespectResourceTTL: false}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(roots) != 0 {
+		t.Fatalf("want 0 roots when only composed children match selectors, got %d %#v", len(roots), roots)
 	}
 }

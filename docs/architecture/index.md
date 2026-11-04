@@ -8,7 +8,7 @@ Xp-clean is a Go CLI (and future in-cluster controller) for scheduled discovery 
 - Eligibility via labels and/or globs + TTL (`pkg/match`); GVK globs are `group/version`
 - `deletion.scope` with default `instances-only`
 - Boolean dry-run planner by default; live deletes via `--apply` + policy `dryRun: false`; skip paused by default
-- Cleanup mode `roots` (default) or opt-in `trace`; foreground Delete propagation; wait after delete opt-in
+- Cleanup mode `roots` (default) or opt-in `trace`; in `roots` mode only XRs with no XR controller-owner are planned (parent need not match selectors); foreground Delete propagation; wait after delete opt-in
 - File / labelled ConfigMap policy (multi-tenant); explicit `--config` for file override
 - Cobra CLI: `run` (day-to-day) / deprecated `plan` / `debug trace` / `manager` / `version` / `completion`
 - Layout: thin `cmd/xp-clean`, `internal/cli` helpers, domain in `pkg/`

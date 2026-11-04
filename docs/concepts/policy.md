@@ -57,7 +57,7 @@ TTL fields gate when an eligible stack is old enough to delete.
 
 | `deletion.mode` / `--mode` | Behaviour |
 |----------------------------|-----------|
-| `roots` (**default**) | Discover + match + highest parents. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk |
+| `roots` (**default**) | Discover + match + highest parents. An XR is a root only if it has **no controller ownerReference whose GroupKind is an XR kind** (from the cluster XRD set), even when that parent XR was filtered out by selectors / keep / TTL / paused. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk |
 | `trace` | Opt-in. Builds parent→child traces for detailed plans, nested keep/paused gates, orphans, and richer execute |
 
 ## Delete semantics

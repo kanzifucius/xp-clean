@@ -15,19 +15,39 @@ import (
 )
 
 func sampleXRD(name string, labels map[string]string, scope string) *unstructured.Unstructured {
+	return sampleXRDCustom(name, labels, scope, "db.dev.example.org", "XDB", "xdbs", "v1alpha1")
+}
+
+func sampleXRDCustom(name string, labels map[string]string, scope, group, kind, plural, version string) *unstructured.Unstructured {
 	if scope == "" {
 		scope = "Namespaced"
 	}
 	return discover.MustUnstructured("apiextensions.crossplane.io/v2", "CompositeResourceDefinition", "", name, labels,
 		map[string]interface{}{
-			"group": "db.dev.example.org",
+			"group": group,
 			"scope": scope,
-			"names": map[string]interface{}{"kind": "XDB", "plural": "xdbs"},
+			"names": map[string]interface{}{"kind": kind, "plural": plural},
 			"versions": []interface{}{
-				map[string]interface{}{"name": "v1alpha1", "served": true, "storage": true},
+				map[string]interface{}{"name": version, "served": true, "storage": true},
 			},
 		},
 	)
+}
+
+func sampleXRCustom(apiVersion, kind, ns, name string, labels map[string]string, ann map[string]string, created time.Time) *unstructured.Unstructured {
+	xr := discover.MustUnstructured(apiVersion, kind, ns, name, labels,
+		map[string]interface{}{
+			"crossplane": map[string]interface{}{
+				"compositionRef": map[string]interface{}{"name": kind + "-comp"},
+			},
+		},
+	)
+	if ann != nil {
+		xr.SetAnnotations(ann)
+	}
+	xr.SetCreationTimestamp(metav1.NewTime(created))
+	xr.SetUID(types.UID("uid-" + name))
+	return xr
 }
 
 func sampleXRDV1(name string) *unstructured.Unstructured {
@@ -81,6 +101,9 @@ func fakeDyn(objs ...runtime.Object) dynamic.Interface {
 		{Group: "apiextensions.crossplane.io", Version: "v1", Resource: "compositions"}:                 "CompositionList",
 		{Group: "apiextensions.crossplane.io", Version: "v1", Resource: "compositionrevisions"}:        "CompositionRevisionList",
 		{Group: "db.dev.example.org", Version: "v1alpha1", Resource: "xdbs"}:                           "XDBList",
+		{Group: "datalab.dev.example.org", Version: "v1alpha1", Resource: "datalabtenants"}:            "DataLabTenantList",
+		{Group: "dbx.dev.example.org", Version: "v1alpha1", Resource: "dbxworkspaces"}:                 "DBXWorkspaceList",
+		{Group: "dbx.dev.example.org", Version: "v1beta1", Resource: "dbxworkspaces"}:                  "DBXWorkspaceList",
 		{Group: "", Version: "v1", Resource: "configmaps"}:                                             "ConfigMapList",
 	}
 	return dynamicfake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), listKinds, objs...)
