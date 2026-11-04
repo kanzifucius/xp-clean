@@ -1498,7 +1498,7 @@
 <tbody>
 <tr>
 <td><code>roots</code> (<strong>default</strong>)</td>
-<td>Discover + match + highest parents. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk</td>
+<td>Discover + match + highest parents. An XR is a root only if it has <strong>no controller ownerReference whose GroupKind is an XR kind</strong> (from the cluster XRD set), even when that parent XR was filtered out by selectors / keep / TTL / paused. Dry-run lists those stacks. Live deletes the root XR (foreground propagation); Crossplane GC cleans dependents. No full composition tree walk</td>
 </tr>
 <tr>
 <td><code>trace</code></td>

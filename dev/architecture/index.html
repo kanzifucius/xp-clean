@@ -1143,7 +1143,7 @@
 <li>Eligibility via labels and/or globs + TTL (<code>pkg/match</code>); GVK globs are <code>group/version</code></li>
 <li><code>deletion.scope</code> with default <code>instances-only</code></li>
 <li>Boolean dry-run planner by default; live deletes via <code>--apply</code> + policy <code>dryRun: false</code>; skip paused by default</li>
-<li>Cleanup mode <code>roots</code> (default) or opt-in <code>trace</code>; foreground Delete propagation; wait after delete opt-in</li>
+<li>Cleanup mode <code>roots</code> (default) or opt-in <code>trace</code>; in <code>roots</code> mode only XRs with no XR controller-owner are planned (parent need not match selectors); foreground Delete propagation; wait after delete opt-in</li>
 <li>File / labelled ConfigMap policy (multi-tenant); explicit <code>--config</code> for file override</li>
 <li>Cobra CLI: <code>run</code> (day-to-day) / deprecated <code>plan</code> / <code>debug trace</code> / <code>manager</code> / <code>version</code> / <code>completion</code></li>
 <li>Layout: thin <code>cmd/xp-clean</code>, <code>internal/cli</code> helpers, domain in <code>pkg/</code></li>
