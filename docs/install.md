@@ -69,6 +69,18 @@ If `~/.local/bin` is not on your `PATH`, the script prints a hint. Add it yourse
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+### Cursor skill
+
+After the binary is on your `PATH`, install the embedded Cursor skill (teaches dry-run first, confirm before `--apply`, skinny eligibility, and `--gvk-glob`):
+
+```bash
+xp-clean skill install            # ~/.cursor/skills/xp-clean/SKILL.md
+xp-clean skill install --project  # .cursor/skills/xp-clean/SKILL.md (git root / cwd)
+xp-clean skill install --force    # overwrite
+```
+
+v1 supports Cursor only (`-a/--agent cursor`).
+
 ### CI tip
 
 For reproducible pipelines, prefer a **pinned** tag or `gh release download` of a specific archive over an unpinned pipe-to-bash.

@@ -20,8 +20,9 @@ Xp-clean targets **Crossplane v2-native** stacks only (**Namespaced** / modern *
 - **Dry-run by default** — `xp-clean run --once` prints stacks matched / would delete; live needs `--apply` and policy `dryRun: false`.
 - Live Deletes use **foreground** propagation; **wait** after delete is opt-in (`--wait` / `deletion.wait`).
 - Skip paused resources by default (`crossplane.io/paused`) unless `deletePaused: true`.
-- Cobra CLI: `run` (day-to-day), deprecated `plan`, `debug trace`, `manager`, `version`, `completion`.
+- Cobra CLI: `run` (day-to-day), deprecated `plan`, `debug trace`, `manager`, `skill install`, `version`, `completion`.
 - Logging via **zap/logr** end-to-end (CLI and manager).
+- **`xp-clean skill install`** embeds a Cursor skill (`~/.cursor/skills/xp-clean/` by default; `--project` for repo-local) that teaches dry-run first, confirm before `--apply`, and `--gvk-glob`.
 
 ## Build
 
@@ -66,6 +67,13 @@ bash install.sh
 ```
 
 The installer verifies SHA-256 against the release `checksums.txt`. Optional `GITHUB_TOKEN` / `GH_TOKEN` helps with API rate limits or private forks — not required for the public happy path. Prefer a pinned archive (or `gh release download`) in CI for reproducibility. See [Install and releases](https://kanzifucius.github.io/xp-clean/latest/install/) for PATH notes and GHCR.
+
+Install the Cursor skill after the binary is on your `PATH`:
+
+```bash
+xp-clean skill install            # ~/.cursor/skills/xp-clean/SKILL.md
+xp-clean skill install --project  # repo-local .cursor/skills/xp-clean/
+```
 
 ### Run in-cluster (GHCR)
 

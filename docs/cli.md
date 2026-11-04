@@ -9,6 +9,7 @@ xp-clean run --once [--config PATH] [--policy-namespace NS] [--apply] [--mode ro
 xp-clean plan [--config PATH] [--policy-namespace NS] [--mode …] [--scope …] [--gvk-glob G/V]… [--fail-on-blocked] [-o json|yaml]
 xp-clean debug trace --name ns/name|--name name -n ns --group G --kind K [--version V] [-o text|json|yaml]
 xp-clean manager [--config PATH] [--policy-namespace NS] [--apply] [--mode roots|trace] [--wait] [--gvk-glob G/V]…
+xp-clean skill install [--project] [--force] [-a cursor]
 xp-clean version [-o short|json|yaml]
 xp-clean completion bash|zsh|fish|powershell
 ```
@@ -19,6 +20,7 @@ xp-clean completion bash|zsh|fish|powershell
 | `plan` | Deprecated thin wrapper: machine-readable DeletePlans (`-o json\|yaml`), always dry-run |
 | `debug trace` | Print one composition tree (debug only; `-n` valid here) |
 | `manager` | Long-running schedule stub (same `--apply` / dry-run / mode / wait gates as `run`) |
+| `skill install` | Install the embedded Cursor skill (`~/.cursor/skills/xp-clean/` by default; `--project` for repo-local) |
 | `version` / `completion` | Build metadata and shell completion |
 
 Root `xp-clean trace` remains as a **hidden** compatibility alias of `debug trace`.
