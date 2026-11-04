@@ -63,7 +63,7 @@ func TestBuildPayloadGoldenShape(t *testing.T) {
 		"XP-CLEAN",
 		"Dry-run finished",
 		"test-stacks",
-		`"style":"emphasis"`,
+		`"style":"good"`,
 		`"bleed":true`,
 		`"width":"Full"`,
 		"01JTEST",
@@ -89,7 +89,7 @@ func TestBuildPayloadBannerStyles(t *testing.T) {
 		title string
 	}{
 		{
-			name:  "failed attention",
+			name:  "failed red attention",
 			ev:    notify.Event{Kind: notify.KindFailed, Policy: "p"},
 			style: "attention",
 			title: "Run failed",
@@ -101,15 +101,21 @@ func TestBuildPayloadBannerStyles(t *testing.T) {
 			title: "Run started",
 		},
 		{
-			name:  "live success good",
+			name:  "live finished green",
 			ev:    notify.Event{Kind: notify.KindFinished, Policy: "p"},
 			style: "good",
 			title: "Run finished",
 		},
 		{
-			name:  "partial warning",
+			name:  "dry-run finished green",
+			ev:    notify.Event{Kind: notify.KindFinished, Policy: "p", DryRun: true},
+			style: "good",
+			title: "Dry-run finished",
+		},
+		{
+			name:  "partial finished still green",
 			ev:    notify.Event{Kind: notify.KindFinished, Policy: "p", ErrorCount: 2},
-			style: "warning",
+			style: "good",
 			title: "Run finished with errors",
 		},
 	}
